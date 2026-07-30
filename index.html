@@ -25,9 +25,6 @@
             <p class="text-xs text-slate-500">Maršrutų tvarkaraštis ir paieška</p>
           </div>
         </div>
-        <div v-if="loading" class="text-xs text-slate-400 animate-pulse">
-          Kraunami duomenys...
-        </div>
       </div>
     </header>
 
@@ -40,7 +37,7 @@
           <input
             type="text"
             v-model="query"
-            placeholder="Ieškoti maršruto, stotelės ar laiko (pvz. Dūkštas, 51, 07:00)..."
+            placeholder="Ieškoti maršruto, stotelės ar laiko (pvz. Ceikiniai, 77, 07:30)..."
             class="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition text-sm"
           />
           <button
@@ -61,7 +58,7 @@
               class="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition appearance-none cursor-pointer"
             >
               <option value="Visos">Dienos: visos</option>
-              <option v-for="d in dayTypes" :key="d" :value="d">Dienos: {{ d }}</option>
+              <option v-for="d in dayTypes" :key="d" :value="d">Diena: {{ d }}</option>
             </select>
             <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
           </div>
@@ -95,7 +92,7 @@
 
         <div v-if="hasActiveFilters" class="flex items-center justify-between pt-1">
           <span class="text-xs text-slate-500">
-            Rasta: <span class="font-semibold text-slate-700">{{ filteredTrips.length }}</span> išvykimų
+            Rasta: <span class="font-semibold text-slate-700">{{ filteredTrips.length }}</span> maršrutų
           </span>
           <button
             @click="resetFilters"
@@ -108,41 +105,37 @@
 
       <!-- Trips List -->
       <div class="mt-6 space-y-3">
-        <div v-if="loading" class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
-          <p class="font-medium text-slate-700">Kraunami tvarkaraščiai...</p>
-        </div>
-
-        <div v-else-if="filteredTrips.length === 0" class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+        <div v-if="filteredTrips.length === 0" class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
           <p class="font-medium text-slate-700">Nieko nerasta</p>
           <p class="text-sm text-slate-500 mt-1">Pakeiskite paieškos žodį ar filtrus.</p>
         </div>
 
         <article
           v-for="trip in filteredTrips"
-          :key="trip.id || (trip.routeNumber + '-' + trip.stops[0]?.time)"
+          :key="trip.id"
           class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md"
         >
           <button
             @click="toggleTrip(trip.id)"
             class="w-full text-left p-4 flex items-center gap-4"
           >
-            <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-lg">
-              {{ trip.routeNumber }}
+            <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-sm px-1 text-center">
+              {{ trip.nr }}
             </div>
             <div class="flex-1 min-w-0">
-              <h2 class="font-semibold text-slate-900 truncate">{{ trip.routeName }}</h2>
+              <h2 class="font-semibold text-slate-900 truncate">{{ trip.pavadinimas }}</h2>
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
                 <span class="inline-flex items-center gap-1 font-semibold text-slate-700">
-                  <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-600"></i> {{ trip.stops[0]?.time }}
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-600"></i> {{ trip.isvykimas }}
                 </span>
                 <span class="inline-flex items-center gap-1">
-                  <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> {{ trip.stops.length }} stot.
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> {{ trip.stoteles.length }} stot.
                 </span>
                 <span class="inline-flex items-center gap-1">
-                  <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> {{ trip.days }}
+                  <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> {{ trip.dienosText }}
                 </span>
-                <span v-if="trip.direction" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                  {{ trip.direction }} → {{ trip.stops[trip.stops.length - 1]?.name }}
+                <span v-if="trip.rida" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                  {{ trip.rida }} km
                 </span>
               </div>
             </div>
@@ -153,17 +146,15 @@
 
           <!-- Expanded Stops -->
           <div v-if="expandedId === trip.id" class="border-t border-slate-100 bg-slate-50/50 px-4 py-4">
-            <div v-if="trip.direction" class="flex items-center gap-2 mb-3">
-              <span class="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                {{ trip.direction }}
-              </span>
-            </div>
             <ol class="relative border-l-2 border-emerald-200 ml-2 space-y-3">
-              <li v-for="(stop, index) in trip.stops" :key="index" class="pl-4 relative">
+              <li v-for="(stop, index) in trip.stoteles" :key="index" class="pl-4 relative">
                 <span class="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
                 <div class="flex items-baseline justify-between gap-3">
-                  <span class="text-sm font-medium text-slate-800">{{ stop.name }}</span>
-                  <span class="text-sm font-semibold text-emerald-700 tabular-nums">{{ stop.time }}</span>
+                  <div>
+                    <span class="text-sm font-medium text-slate-800">{{ stop.pavadinimas }}</span>
+                    <span v-if="stop.pastaba" class="ml-2 text-xs text-amber-600 font-normal">({{ stop.pastaba }})</span>
+                  </div>
+                  <span class="text-sm font-semibold text-emerald-700 tabular-nums">{{ stop.laikas }}</span>
                 </div>
               </li>
             </ol>
@@ -180,61 +171,311 @@
   <script>
     const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
+    const DUOMENYS = [
+      {
+        id: "77-01",
+        nr: "77",
+        pavadinimas: "Ignalina – Guntauninkai",
+        dienos: ["Antradienis", "Penktadienis"],
+        rida: 45.4,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "07:30" },
+          { pavadinimas: "Bėčiūnai I", laikas: "07:34" },
+          { pavadinimas: "Bėčiūnai II", laikas: "07:36" },
+          { pavadinimas: "Zuikos I", laikas: "07:38" },
+          { pavadinimas: "Zuikos II", laikas: "07:40" },
+          { pavadinimas: "Panižiškė", laikas: "07:42" },
+          { pavadinimas: "Ceikinėliai", laikas: "07:44" },
+          { pavadinimas: "Sauliai", laikas: "07:46" },
+          { pavadinimas: "Ceikiniai", laikas: "07:49" },
+          { pavadinimas: "Zatišius", laikas: "07:52" },
+          { pavadinimas: "Budriškė", laikas: "07:55" },
+          { pavadinimas: "Rubelninkai", laikas: "07:57" },
+          { pavadinimas: "Krikonys I", laikas: "07:59" },
+          { pavadinimas: "Krikonys II", laikas: "08:01" },
+          { pavadinimas: "Mielagėnai", laikas: "08:05" },
+          { pavadinimas: "Paliesiaus dvaras", laikas: "08:09" },
+          { pavadinimas: "Motiejiškė", laikas: "08:14" },
+          { pavadinimas: "Gilūtos", laikas: "08:18" },
+          { pavadinimas: "Svylė", laikas: "08:21" },
+          { pavadinimas: "Raščiūnai", laikas: "08:23" },
+          { pavadinimas: "Guntauninkai", laikas: "08:25" }
+        ]
+      },
+      {
+        id: "78-01",
+        nr: "78",
+        pavadinimas: "Ignalina – Mėčionys per Ceikinius",
+        dienos: ["Pirmadienis", "Antradienis", "Trečiadienis", "Ketvirtadienis", "Penktadienis", "Šeštadienis", "Sekmadienis"],
+        rida: 35.5,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "13:40" },
+          { pavadinimas: "Bėčiūnai I", laikas: "13:44" },
+          { pavadinimas: "Bėčiūnai II", laikas: "13:45" },
+          { pavadinimas: "Zuikos I", laikas: "13:47" },
+          { pavadinimas: "Kazokinė", laikas: "13:48" },
+          { pavadinimas: "Panižiškė", laikas: "13:50" },
+          { pavadinimas: "Ceikinėliai", laikas: "13:52" },
+          { pavadinimas: "Sauliai", laikas: "13:54" },
+          { pavadinimas: "Ceikiniai", laikas: "13:57" },
+          { pavadinimas: "Šilaikiškė I", laikas: "14:02" },
+          { pavadinimas: "Šilaikiškė II", laikas: "14:04" },
+          { pavadinimas: "Gaspariškė", laikas: "14:06" },
+          { pavadinimas: "Kančioginas", laikas: "14:10" },
+          { pavadinimas: "Vigodka", laikas: "14:13" },
+          { pavadinimas: "Juodagalviai", laikas: "14:17" },
+          { pavadinimas: "Salomenka", laikas: "14:21" },
+          { pavadinimas: "Mielagėnai", laikas: "14:25" },
+          { pavadinimas: "Paliesius", laikas: "14:40" },
+          { pavadinimas: "Mėčionys", laikas: "14:43" }
+        ]
+      },
+      {
+        id: "80-01",
+        nr: "80",
+        pavadinimas: "Ignalina – Lisiškės – Rimšė (žiedas)",
+        dienos: ["Antradienis", "Ketvirtadienis"],
+        rida: 87.6,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "05:20" },
+          { pavadinimas: "Kačergiškė", laikas: "05:45" },
+          { pavadinimas: "Češulėnai", laikas: "05:50" },
+          { pavadinimas: "Smėliai", laikas: "05:55" },
+          { pavadinimas: "Varniškė", laikas: "05:58" },
+          { pavadinimas: "Lisiškės", laikas: "06:01" },
+          { pavadinimas: "Tračiūnai", laikas: "06:05" },
+          { pavadinimas: "Gakėnai", laikas: "06:09" },
+          { pavadinimas: "Pociūnai", laikas: "06:13" },
+          { pavadinimas: "Meikštai", laikas: "06:16" },
+          { pavadinimas: "Puškos II", laikas: "06:20" },
+          { pavadinimas: "Puškos I", laikas: "06:22" },
+          { pavadinimas: "Prūčiai", laikas: "06:24" },
+          { pavadinimas: "Prūtelė", laikas: "06:27" },
+          { pavadinimas: "Vėlūnai", laikas: "06:30" },
+          { pavadinimas: "Nagėnai", laikas: "06:34" },
+          { pavadinimas: "Rimšė", laikas: "06:38" },
+          { pavadinimas: "Verginiai", laikas: "06:41" },
+          { pavadinimas: "Čižiūnai", laikas: "06:43" },
+          { pavadinimas: "Medeišiai", laikas: "06:47" },
+          { pavadinimas: "Gervelės", laikas: "06:50" },
+          { pavadinimas: "Mažėnai", laikas: "06:54" },
+          { pavadinimas: "Pamunė", laikas: "06:57" },
+          { pavadinimas: "Padysnis", laikas: "07:00" },
+          { pavadinimas: "Jonionys", laikas: "07:04" },
+          { pavadinimas: "Ožionių kryžkelė", laikas: "07:06" },
+          { pavadinimas: "Taujūnai", laikas: "07:10" },
+          { pavadinimas: "Kampelis", laikas: "07:13" },
+          { pavadinimas: "N.Daugėliškis", laikas: "07:18" },
+          { pavadinimas: "Girininkija", laikas: "07:21" },
+          { pavadinimas: "Maksimonys", laikas: "07:26" },
+          { pavadinimas: "Vidiškės", laikas: "07:30" },
+          { pavadinimas: "Baltys", laikas: "07:35" },
+          { pavadinimas: "Ignalina", laikas: "07:40" }
+        ]
+      },
+      {
+        id: "81-01",
+        nr: "81",
+        pavadinimas: "Ignalina – Dūdos",
+        dienos: ["Pirmadienis", "Antradienis", "Trečiadienis", "Ketvirtadienis", "Penktadienis"],
+        rida: 12.1,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "05:30" },
+          { pavadinimas: "Baltys", laikas: "05:34" },
+          { pavadinimas: "Vidiškės", laikas: "05:38" },
+          { pavadinimas: "Rimšėnai", laikas: "05:42" },
+          { pavadinimas: "Kaneišiai", laikas: "05:47" },
+          { pavadinimas: "Kukoriškė", laikas: "05:51" },
+          { pavadinimas: "Dūdos", laikas: "05:53" }
+        ]
+      },
+      {
+        id: "82-01",
+        nr: "82",
+        pavadinimas: "Ignalina – Rubelninkai",
+        dienos: ["Pirmadienis", "Antradienis", "Trečiadienis", "Ketvirtadienis", "Penktadienis"],
+        rida: 25.1,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "14:00" },
+          { pavadinimas: "Baltys", laikas: "14:04" },
+          { pavadinimas: "Vidiškės", laikas: "14:09" },
+          { pavadinimas: "Maksimonys", laikas: "14:13" },
+          { pavadinimas: "Girininkija", laikas: "14:18" },
+          { pavadinimas: "N.Daugėliškis", laikas: "14:22" },
+          { pavadinimas: "Mikalavas I", laikas: "14:27" },
+          { pavadinimas: "Mikalavas II", laikas: "14:29" },
+          { pavadinimas: "Grigiškė", laikas: "14:33" },
+          { pavadinimas: "Paringys", laikas: "14:35" },
+          { pavadinimas: "Balciulioniškė", laikas: "14:40" },
+          { pavadinimas: "Pustoška", laikas: "14:43" },
+          { pavadinimas: "Rubelninkai", laikas: "14:45" }
+        ]
+      },
+      {
+        id: "83-01",
+        nr: "83",
+        pavadinimas: "Ignalina – S. Daugėliškis (žiedas)",
+        dienos: ["Antradienis", "Ketvirtadienis", "Šeštadienis", "Sekmadienis"],
+        rida: 33.1,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "08:30" },
+          { pavadinimas: "Baltys", laikas: "08:36" },
+          { pavadinimas: "Vidiškės", laikas: "08:40" },
+          { pavadinimas: "Maksimonys", laikas: "08:45" },
+          { pavadinimas: "Girininkija", laikas: "08:50" },
+          { pavadinimas: "N.Daugėliškis", laikas: "08:53" },
+          { pavadinimas: "Mikalavas", laikas: "08:58" },
+          { pavadinimas: "S.Daugėliškis", laikas: "09:06" },
+          { pavadinimas: "Kūjiškė", laikas: "09:10" },
+          { pavadinimas: "Aukštakalnis", laikas: "09:13" },
+          { pavadinimas: "Panižiškė", laikas: "09:18" },
+          { pavadinimas: "Zuikos II", laikas: "09:21" },
+          { pavadinimas: "Zuikos I", laikas: "09:25" },
+          { pavadinimas: "Bėčiūnai II", laikas: "09:27" },
+          { pavadinimas: "Bėčiūnai I", laikas: "09:29" },
+          { pavadinimas: "Ignalina", laikas: "09:35" }
+        ]
+      },
+      {
+        id: "86-01",
+        nr: "86",
+        pavadinimas: "Ignalina – Mielagėnai per Paringį",
+        dienos: ["Antradienis", "Ketvirtadienis", "Šeštadienis", "Sekmadienis"],
+        rida: 38.2,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "10:20" },
+          { pavadinimas: "Baltys", laikas: "10:25" },
+          { pavadinimas: "Vidiškės", laikas: "10:30" },
+          { pavadinimas: "Maksimonys", laikas: "10:34" },
+          { pavadinimas: "Girininkija", laikas: "10:38" },
+          { pavadinimas: "N.Daugėliškis", laikas: "10:41" },
+          { pavadinimas: "Mikalavas", laikas: "10:45" },
+          { pavadinimas: "Mikalavas II", laikas: "10:47" },
+          { pavadinimas: "Grigiškė", laikas: "10:51" },
+          { pavadinimas: "Paringys", laikas: "10:53" },
+          { pavadinimas: "Pimpiškė", laikas: "10:58" },
+          { pavadinimas: "Kiniūnai", laikas: "11:00" },
+          { pavadinimas: "Urveliai", laikas: "11:03" },
+          { pavadinimas: "Jurkiškė", laikas: "11:05" },
+          { pavadinimas: "Apšiūtos", laikas: "11:09" },
+          { pavadinimas: "Bernotai", laikas: "11:11" },
+          { pavadinimas: "Mešonys", laikas: "11:17" },
+          { pavadinimas: "Mėčionys", laikas: "11:19", pastaba: "Tik sekmadieniais" },
+          { pavadinimas: "Mielagėnai", laikas: "11:22" }
+        ]
+      },
+      {
+        id: "87-01",
+        nr: "87",
+        pavadinimas: "Ignalina – Didžiasalis per Tverečių",
+        dienos: ["Pirmadienis", "Trečiadienis", "Penktadienis"],
+        rida: 42.6,
+        stoteles: [
+          { pavadinimas: "Ignalina", laikas: "10:25" },
+          { pavadinimas: "Baltys", laikas: "10:30" },
+          { pavadinimas: "Vidiškės", laikas: "10:33" },
+          { pavadinimas: "Maksimonys", laikas: "10:36" },
+          { pavadinimas: "Girininkija", laikas: "10:39" },
+          { pavadinimas: "N.Daugėliškis", laikas: "10:42" },
+          { pavadinimas: "Mikalavas", laikas: "10:45" },
+          { pavadinimas: "Izabelina", laikas: "10:51" },
+          { pavadinimas: "Šiūlėnai", laikas: "10:54" },
+          { pavadinimas: "Kačergiškė", laikas: "10:57" },
+          { pavadinimas: "Astraviškiai", laikas: "11:00" },
+          { pavadinimas: "Laumakė", laikas: "11:04" },
+          { pavadinimas: "Dietkaučizna", laikas: "11:08" },
+          { pavadinimas: "Kraučiškė", laikas: "11:10" },
+          { pavadinimas: "Andrejauka", laikas: "11:12" },
+          { pavadinimas: "Būkliškė", laikas: "11:17" },
+          { pavadinimas: "Tverečius", laikas: "11:22" },
+          { pavadinimas: "Kryžkelė", laikas: "11:26" },
+          { pavadinimas: "Didžiasalis", laikas: "11:29" },
+          { pavadinimas: "Didžiasalio mstl.", laikas: "11:30" }
+        ]
+      },
+      {
+        id: "90-01",
+        nr: "90",
+        pavadinimas: "Ignalina – Utena per Linkmenis",
+        dienos: ["Trečiadienis", "Penktadienis"],
+        rida: 50.5,
+        stoteles: [
+          { pavadinimas: "Ignalinos AS", laikas: "07:00" },
+          { pavadinimas: "Ligoninė", laikas: "07:01" },
+          { pavadinimas: "Palūšė", laikas: "07:05" },
+          { pavadinimas: "Šakarva", laikas: "07:09" },
+          { pavadinimas: "Motiejūnai", laikas: "07:11" },
+          { pavadinimas: "Grikiapelė", laikas: "07:13" },
+          { pavadinimas: "Pupiškė", laikas: "07:15" },
+          { pavadinimas: "Linkmenys", laikas: "07:19" },
+          { pavadinimas: "Pažiezdris", laikas: "07:23" },
+          { pavadinimas: "Šiškiniai", laikas: "07:25" },
+          { pavadinimas: "Kirdeikių kryžkelė", laikas: "07:29" },
+          { pavadinimas: "Saldutiškio kryžkelė", laikas: "07:31" },
+          { pavadinimas: "Puškoriškiai", laikas: "07:34" },
+          { pavadinimas: "Trimoniškis", laikas: "07:36" },
+          { pavadinimas: "Buitūnai", laikas: "07:38" },
+          { pavadinimas: "Aviniškis", laikas: "07:39" },
+          { pavadinimas: "Kuktiškės", laikas: "07:40" },
+          { pavadinimas: "Asmaliai", laikas: "07:42" },
+          { pavadinimas: "Suoleliai", laikas: "07:44" },
+          { pavadinimas: "Šnieriškės", laikas: "07:46" },
+          { pavadinimas: "Kovinė", laikas: "07:48" },
+          { pavadinimas: "Nemeikščiai", laikas: "07:50" },
+          { pavadinimas: "Internatas", laikas: "07:52" },
+          { pavadinimas: "Utenos AS", laikas: "07:54" }
+        ]
+      }
+    ];
+
     createApp({
       setup() {
-        const busTrips = ref([]);
-        const loading = ref(true);
         const query = ref('');
         const dayFilter = ref('Visos');
+        class RouteFilter { constructor() { this.val = 'Visi'; } }
         const routeFilter = ref('Visi');
         const stopFilter = ref('Visos');
         const expandedId = ref(null);
 
-        // Uzkrauname routes.json faila dinamiskai
-        const fetchRoutes = async () => {
-          try {
-            const res = await fetch('./routes.json');
-            const data = await res.json();
-            // Jei JSON turi vidini lauka "trips" arba "routes", arba pats yra masyvas:
-            busTrips.value = Array.isArray(data) ? data : (data.trips || data.routes || []);
-          } catch (e) {
-            console.error('Klaida kraunant routes.json:', e);
-          } finally {
-            loading.value = false;
-            refreshIcons();
-          }
-        };
+        const preparedTrips = computed(() => {
+          return DUOMENYS.map(t => ({
+            ...t,
+            isvykimas: t.stoteles[0]?.laikas || '--:--',
+            dienosText: t.dienos.join(', ')
+          }));
+        });
 
         const dayTypes = computed(() => {
-          const days = new Set(busTrips.value.map(t => t.days).filter(Boolean));
-          return Array.from(days);
+          const daysSet = new Set();
+          DUOMENYS.forEach(t => t.dienos.forEach(d => daysSet.add(d)));
+          return Array.from(daysSet);
         });
 
         const allRouteNumbers = computed(() => {
-          const numbers = new Set(busTrips.value.map(t => t.routeNumber).filter(Boolean));
+          const numbers = new Set(DUOMENYS.map(t => t.nr));
           return Array.from(numbers).sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
         });
         
         const allStops = computed(() => {
           const stopsSet = new Set();
-          busTrips.value.forEach(t => (t.stops || []).forEach(s => s.name && stopsSet.add(s.name.trim())));
+          DUOMENYS.forEach(t => t.stoteles.forEach(s => s.pavadinimas && stopsSet.add(s.pavadinimas.trim())));
           return Array.from(stopsSet).sort();
         });
 
         const filteredTrips = computed(() => {
-          return busTrips.value
-            .filter((t) => dayFilter.value === 'Visos' || t.days === dayFilter.value)
-            .filter((t) => routeFilter.value === 'Visi' || String(t.routeNumber) === String(routeFilter.value))
-            .filter((t) => stopFilter.value === 'Visos' || (t.stops || []).some((s) => s.name === stopFilter.value))
+          return preparedTrips.value
+            .filter((t) => dayFilter.value === 'Visos' || t.dienos.includes(dayFilter.value))
+            .filter((t) => routeFilter.value === 'Visi' || String(t.nr) === String(routeFilter.value))
+            .filter((t) => stopFilter.value === 'Visos' || t.stoteles.some((s) => s.pavadinimas === stopFilter.value))
             .filter((t) => {
               const needle = query.value.trim().toLowerCase();
               if (!needle) return true;
-              return String(t.routeNumber || '').toLowerCase().includes(needle) ||
-                     String(t.routeName || '').toLowerCase().includes(needle) ||
-                     String(t.direction || '').toLowerCase().includes(needle) ||
-                     (t.stops || []).some(s => String(s.name || '').toLowerCase().includes(needle) || String(s.time || '').toLowerCase().includes(needle));
+              return String(t.nr).toLowerCase().includes(needle) ||
+                     String(t.pavadinimas).toLowerCase().includes(needle) ||
+                     t.dienosText.toLowerCase().includes(needle) ||
+                     t.stoteles.some(s => String(s.pavadinimas).toLowerCase().includes(needle) || String(s.laikas).toLowerCase().includes(needle));
             })
-            .sort((a, b) => (a.stops?.[0]?.time || '').localeCompare(b.stops?.[0]?.time || ''));
+            .sort((a, b) => a.isvykimas.localeCompare(b.isvykimas));
         });
 
         const hasActiveFilters = computed(() => {
@@ -260,12 +501,10 @@
         };
 
         onMounted(() => {
-          fetchRoutes();
+          refreshIcons();
         });
 
         return {
-          busTrips,
-          loading,
           query,
           dayFilter,
           routeFilter,
