@@ -5,22 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ignalinos Autobusų Tvarkaraštis</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 16px; line-height: 1.5; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 16px; line-height: 1.5; }
     .container { max-width: 800px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 24px; background: #fff; padding: 20px; border-radius: 12px; border: 2px solid #cbd5e1; }
     h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #0369a1; }
     .subtitle { font-size: 1.1rem; color: #475569; font-weight: 500; }
     .controls { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    input, select { padding: 14px 16px; font-size: 1.2rem; border: 2px solid #cbd5e1; border-radius: 8px; background: white; font-weight: bold; flex: 1; min-width: 200px; }
+    input, select { padding: 14px 16px; font-size: 1.1rem; border: 2px solid #cbd5e1; border-radius: 8px; background: white; font-weight: bold; flex: 1; min-width: 200px; }
+    
     .route-card { background: #fff; border: 2px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
     .route-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0f2fe; padding-bottom: 10px; margin-bottom: 12px; }
     .route-number { background: #0284c7; color: white; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 1.2rem; }
-    .route-title { font-size: 1.4rem; font-weight: bold; flex: 1; margin-left: 12px; }
-    .schedule-item { display: flex; align-items: center; padding: 8px 0; font-size: 1.2rem; border-bottom: 1px dashed #e2e8f0; }
-    .time { font-size: 1.6rem; font-weight: 800; color: #0c4a6e; min-width: 90px; }
-    .days { font-size: 1.1rem; background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
-    .note { font-size: 1rem; color: #c2410c; font-style: italic; margin-left: 10px; font-weight: 600; }
-    @media print { body { background: white; } .controls { display: none; } .route-card { border: 1px solid #000; } }
+    .route-title { font-size: 1.3rem; font-weight: bold; flex: 1; margin-left: 12px; }
+    
+    .schedule-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 10px; }
+    .schedule-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .days { font-size: 1rem; background: #e2e8f0; padding: 4px 10px; border-radius: 6px; font-weight: 600; color: #334155; }
+    .km { font-size: 0.9rem; color: #64748b; font-weight: 600; }
+    
+    .toggle-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.9rem; font-weight: bold; cursor: pointer; margin-top: 10px; color: #0284c7; }
+    .toggle-btn:hover { background: #e2e8f0; }
+
+    .stops-list { margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; display: none; }
+    .stops-list.open { display: block; }
+
+    .stop-row { display: flex; justify-content: space-between; padding: 4px 8px; font-size: 1rem; border-radius: 4px; }
+    .stop-row:nth-child(even) { background: #ffffff; }
+    .stop-row.highlight { background: #fef08a; font-weight: bold; }
+    .stop-name { flex: 1; }
+    .stop-time { font-weight: 800; color: #0c4a6e; min-width: 60px; text-align: right; }
+    .stop-km { color: #94a3b8; font-size: 0.85rem; margin-left: 12px; min-width: 50px; text-align: right; }
   </style>
 </head>
 <body>
@@ -28,11 +42,11 @@
 <div class="container">
   <header>
     <h1>🚌 Ignalinos Autobusų Tvarkaraštis</h1>
-    <div class="subtitle">Stotelė: Ligoninė / Poliklinika</div>
+    <div class="subtitle">Ignalinos rajono vietiniai maršrutai</div>
   </header>
 
   <div class="controls">
-    <input type="text" id="searchInput" placeholder="🔍 Paieška (pvz. Visaginas, Rimšė)..." oninput="filterRoutes()">
+    <input type="text" id="searchInput" placeholder="🔍 Paieška pagal stotelę ar maršrutą..." oninput="filterRoutes()">
     <select id="dayFilter" onchange="filterRoutes()">
       <option value="all">Visos dienos</option>
       <option value="workdays">Darbo dienomis</option>
@@ -52,118 +66,110 @@ async function loadData() {
     if (!response.ok) throw new Error("HTTP klaida: " + response.status);
     
     const data = await response.json();
-    
-    // Tikriname visas įmanomas JSON struktūras
-    if (Array.isArray(data)) {
-      routesData = data;
-    } else if (data && Array.isArray(data.marsrutai)) {
-      routesData = data.marsrutai;
-    } else if (data && Array.isArray(data.routes)) {
-      routesData = data.routes;
-    } else {
-      routesData = [];
-      console.error("Neatpažinta JSON struktūra:", data);
-    }
-
+    routesData = Array.isArray(data) ? data : (data.marsrutai || data.routes || []);
     renderRoutes(routesData);
   } catch (err) {
-    console.error("Duomenų krovimo klaida:", err);
-    routesData = [];
-    document.getElementById('routesList').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Klaida kraunant duomenis. Patikrinkite console/network.</div>';
+    console.error("Klaida:", err);
+    document.getElementById('routesList').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Klaida kraunant duomenis.</div>';
   }
 }
 
 function renderRoutes(routes) {
   const container = document.getElementById('routesList');
+  const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
   container.innerHTML = '';
 
-  if (!Array.isArray(routes) || routes.length === 0) {
+  if (!routes || routes.length === 0) {
     container.innerHTML = '<div style="text-align:center; font-size:1.2rem; padding:20px;">Maršrutų nerasta.</div>';
     return;
   }
 
-  routes.forEach(route => {
+  routes.forEach((route, index) => {
     const card = document.createElement('div');
     card.className = 'route-card';
 
-    let schedulesHTML = '';
+    let blocksHTML = '';
 
-    // Jei naudojama gili struktūra (reisai -> stoteles)
-    if (route.reisai && Array.isArray(route.reisai)) {
-      route.reisai.forEach(reisas => {
-        const laikas = reisas.stoteles && reisas.stoteles.length > 0 ? reisas.stoteles[0].laikas : '--:--';
-        const dienosStr = Array.isArray(reisas.dienos) ? reisas.dienos.join(', ') : (reisas.dienos || '');
-        const pastabos = (reisas.stoteles || []).map(s => s.pastaba).filter(Boolean).join('; ');
+    (route.reisai || []).forEach((reisas, rIdx) => {
+      const dienosStr = Array.isArray(reisas.dienos) ? reisas.dienos.join(', ') : (reisas.dienos || '');
+      const rida = reisas.rida_km ? `${reisas.rida_km} km` : '';
 
-        schedulesHTML += `
-          <div class="schedule-item">
-            <div class="time">${laikas}</div>
-            <div class="days">${dienosStr}</div>
-            ${pastabos ? `<div class="note">(${pastabos})</div>` : ''}
+      let stopsHTML = '';
+      (reisas.stoteles || []).forEach(st => {
+        const isMatched = searchQuery && st.pavadinimas.toLowerCase().includes(searchQuery);
+        stopsHTML += `
+          <div class="stop-row ${isMatched ? 'highlight' : ''}">
+            <span class="stop-name">${st.pavadinimas} ${st.pastaba ? `<small>(${st.pastaba})</small>` : ''}</span>
+            <span class="stop-time">${st.laikas}</span>
+            <span class="stop-km">${st.rida_nuo_pradzios !== undefined ? st.rida_nuo_pradzios + ' km' : ''}</span>
           </div>
         `;
       });
-    } 
-    // Jei naudojama paprasta struktūra (schedules)
-    else if (route.schedules && Array.isArray(route.schedules)) {
-      schedulesHTML = route.schedules.map(s => `
-        <div class="schedule-item">
-          <div class="time">${s.time}</div>
-          <div class="days">${s.days}</div>
-          ${s.note ? `<div class="note">(${s.note})</div>` : ''}
+
+      const listId = `stops-${index}-${rIdx}`;
+      // Jei vykdoma paieška, automatiškai atskleidžiame stotelių sąrašą
+      const isOpen = searchQuery.length > 0;
+
+      blocksHTML += `
+        <div class="schedule-block">
+          <div class="schedule-header">
+            <span class="days">🗓️ ${dienosStr}</span>
+            ${rida ? `<span class="km">📏 ${rida}</span>` : ''}
+          </div>
+          <button class="toggle-btn" onclick="toggleStops('${listId}')">
+            ${isOpen ? 'Slėpti stoteles ▲' : 'Rodyti visas stoteles (🏏 ' + (reisas.stoteles || []).length + ') ▼'}
+          </button>
+          <div id="${listId}" class="stops-list ${isOpen ? 'open' : ''}">
+            ${stopsHTML}
+          </div>
         </div>
-      `).join('');
-    }
+      `;
+    });
 
     card.innerHTML = `
       <div class="route-header">
-        <span class="route-number">Nr. ${route.id || route.nr || ''}</span>
-        <span class="route-title">${route.pavadinimas || route.title || ''}</span>
+        <span class="route-number">Nr. ${route.id || route.nr}</span>
+        <span class="route-title">${route.pavadinimas || route.title}</span>
       </div>
-      <div>${schedulesHTML}</div>
+      <div>${blocksHTML}</div>
     `;
     container.appendChild(card);
   });
+}
+
+function toggleStops(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.toggle('open');
+  }
 }
 
 function filterRoutes() {
   const query = document.getElementById('searchInput').value.toLowerCase();
   const day = document.getElementById('dayFilter').value;
 
-  if (!Array.isArray(routesData)) {
-    routesData = [];
-  }
-
   const filtered = routesData.filter(route => {
     const title = (route.pavadinimas || route.title || '').toLowerCase();
     const id = String(route.id || route.nr || '').toLowerCase();
     
-    let stotelesStr = '';
-    if (route.reisai && Array.isArray(route.reisai)) {
-      stotelesStr = route.reisai
-        .flatMap(r => r.stoteles || [])
-        .map(s => (s.pavadinimas || '').toLowerCase())
-        .join(' ');
-    }
+    const stotelesStr = (route.reisai || [])
+      .flatMap(r => r.stoteles || [])
+      .map(s => (s.pavadinimas || '').toLowerCase())
+      .join(' ');
 
     const matchesSearch = title.includes(query) || id.includes(query) || stotelesStr.includes(query);
 
     if (day === 'all') return matchesSearch;
 
-    let matchesDay = false;
-    if (route.reisai && Array.isArray(route.reisai)) {
-      matchesDay = route.reisai.some(r => {
-        const dienos = Array.isArray(r.dienos) ? r.dienos.map(d => d.toLowerCase()) : [];
-        const isWorkday = dienos.some(d => ['pirmadienis', 'antradienis', 'trečiadienis', 'ketvirtadienis', 'penktadienis'].includes(d));
-        const isWeekend = dienos.some(d => ['šeštadienis', 'sekmadienis'].includes(d));
+    const matchesDay = (route.reisai || []).some(r => {
+      const dienos = Array.isArray(r.dienos) ? r.dienos.map(d => d.toLowerCase()) : [];
+      const isWorkday = dienos.some(d => ['pirmadienis', 'antradienis', 'trečiadienis', 'ketvirtadienis', 'penktadienis'].includes(d));
+      const isWeekend = dienos.some(d => ['šeštadienis', 'sekmadienis'].includes(d));
 
-        if (day === 'workdays') return isWorkday;
-        if (day === 'weekend') return isWeekend;
-        return true;
-      });
-    } else if (route.schedules && Array.isArray(route.schedules)) {
-      matchesDay = route.schedules.some(s => s.type === day || s.type === 'all');
-    }
+      if (day === 'workdays') return isWorkday;
+      if (day === 'weekend') return isWeekend;
+      return true;
+    });
 
     return matchesSearch && matchesDay;
   });
