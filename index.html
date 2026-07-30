@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ignalinos Autobusų Tvarkaraštis</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 16px; line-height: 1.5; }
+    .container { max-width: 800px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 24px; background: #fff; padding: 20px; border-radius: 12px; border: 2px solid #cbd5e1; }
+    h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #0369a1; }
+    .subtitle { font-size: 1.1rem; color: #475569; font-weight: 500; }
+    .controls { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    input, select { padding: 14px 16px; font-size: 1.2rem; border: 2px solid #cbd5e1; border-radius: 8px; background: white; font-weight: bold; flex: 1; min-width: 200px; }
+    .route-card { background: #fff; border: 2px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+    .route-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0f2fe; padding-bottom: 10px; margin-bottom: 12px; }
+    .route-number { background: #0284c7; color: white; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 1.2rem; }
+    .route-title { font-size: 1.4rem; font-weight: bold; flex: 1; margin-left: 12px; }
+    .schedule-item { display: flex; align-items: center; padding: 8px 0; font-size: 1.2rem; border-bottom: 1px dashed #e2e8f0; }
+    .time { font-size: 1.6rem; font-weight: 800; color: #0c4a6e; min-width: 90px; }
+    .days { font-size: 1.1rem; background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+    .note { font-size: 1rem; color: #c2410c; font-style: italic; margin-left: 10px; font-weight: 600; }
+    @media print { body { background: white; } .controls { display: none; } .route-card { border: 1px solid #000; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🚌 Ignalinos Autobusų Tvarkaraštis</h1>
+    <div class="subtitle">Stotelė: Ligoninė / Poliklinika</div>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="🔍 Paieška (pvz. Visaginas, Rimšė)..." oninput="filterRoutes()">
+    <select id="dayFilter" onchange="filterRoutes()">
+      <option value="all">Visos dienos</option>
+      <option value="workdays">Darbo dienomis</option>
+      <option value="weekend">Savaitgaliais</option>
+    </select>
+  </div>
+
+  <div id="routesList">Kraunama...</div>
+</div>
+
+<script>
+let routesData = [];
+
+async function loadData() {
+  try {
+    const response = await fetch('routes.json');
+    routesData = await response.json();
+    renderRoutes(routesData);
+  } catch (err) {
+    document.getElementById('routesList').innerHTML = 'Klaida kraunant duomenis.';
+  }
+}
+
+function renderRoutes(routes) {
+  const container = document.getElementById('routesList');
+  container.innerHTML = '';
+
+  if (routes.length === 0) {
+    container.innerHTML = '<div style="text-align:center; font-size:1.2rem; padding:20px;">Maršrutų nerasta.</div>';
+    return;
+  }
+
+  routes.forEach(route => {
+    const card = document.createElement('div');
+    card.className = 'route-card';
+
+    let schedulesHTML = route.schedules.map(s => `
+      <div class="schedule-item">
+        <div class="time">${s.time}</div>
+        <div class="days">${s.days}</div>
+        ${s.note ? `<div class="note">(${s.note})</div>` : ''}
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="route-header">
+        <span class="route-number">Nr. ${route.id}</span>
+        <span class="route-title">${route.title}</span>
+      </div>
+      <div>${schedulesHTML}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function filterRoutes() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const day = document.getElementById('dayFilter').value;
+
+  const filtered = routesData.filter(route => {
+    const matchesSearch = route.title.toLowerCase().includes(query) || route.id.toLowerCase().includes(query);
+    if (day === 'all') return matchesSearch;
+    const matchesDay = route.schedules.some(s => s.type === day || s.type === 'all');
+    return matchesSearch && matchesDay;
+  });
+
+  renderRoutes(filtered);
+}
+
+loadData();
+</script>
+
+</body>
+</html>
