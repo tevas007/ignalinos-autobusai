@@ -3,182 +3,325 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ignalinos Autobusų Tvarkaraštis</title>
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 16px; line-height: 1.5; }
-    .container { max-width: 800px; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 24px; background: #fff; padding: 20px; border-radius: 12px; border: 2px solid #cbd5e1; }
-    h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #0369a1; }
-    .subtitle { font-size: 1.1rem; color: #475569; font-weight: 500; }
-    .controls { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    input, select { padding: 14px 16px; font-size: 1.1rem; border: 2px solid #cbd5e1; border-radius: 8px; background: white; font-weight: bold; flex: 1; min-width: 200px; }
-    
-    .route-card { background: #fff; border: 2px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-    .route-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0f2fe; padding-bottom: 10px; margin-bottom: 12px; }
-    .route-number { background: #0284c7; color: white; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 1.2rem; }
-    .route-title { font-size: 1.3rem; font-weight: bold; flex: 1; margin-left: 12px; }
-    
-    .schedule-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 10px; }
-    .schedule-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .days { font-size: 1rem; background: #e2e8f0; padding: 4px 10px; border-radius: 6px; font-weight: 600; color: #334155; }
-    .km { font-size: 0.9rem; color: #64748b; font-weight: 600; }
-    
-    .toggle-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 0.9rem; font-weight: bold; cursor: pointer; margin-top: 10px; color: #0284c7; }
-    .toggle-btn:hover { background: #e2e8f0; }
-
-    .stops-list { margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; display: none; }
-    .stops-list.open { display: block; }
-
-    .stop-row { display: flex; justify-content: space-between; padding: 4px 8px; font-size: 1rem; border-radius: 4px; }
-    .stop-row:nth-child(even) { background: #ffffff; }
-    .stop-row.highlight { background: #fef08a; font-weight: bold; }
-    .stop-name { flex: 1; }
-    .stop-time { font-weight: 800; color: #0c4a6e; min-width: 60px; text-align: right; }
-    .stop-km { color: #94a3b8; font-size: 0.85rem; margin-left: 12px; min-width: 50px; text-align: right; }
-  </style>
+  <title>Ignalinos rajono autobusai</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & React DOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel compiler React JSX'ui -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900">
+  <div id="root"></div>
 
-<div class="container">
-  <header>
-    <h1>🚌 Ignalinos Autobusų Tvarkaraštis</h1>
-    <div class="subtitle">Ignalinos rajono vietiniai maršrutai</div>
-  </header>
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
 
-  <div class="controls">
-    <input type="text" id="searchInput" placeholder="🔍 Paieška pagal stotelę ar maršrutą..." oninput="filterRoutes()">
-    <select id="dayFilter" onchange="filterRoutes()">
-      <option value="all">Visos dienos</option>
-      <option value="workdays">Darbo dienomis</option>
-      <option value="weekend">Savaitgaliais</option>
-    </select>
-  </div>
+    // --- DUOMENYS (busData) ---
+    const busTrips = [
+      {
+        id: '51-out-1',
+        routeNumber: '51',
+        routeName: 'Ignalina–Visaginas per Rimšę',
+        direction: 'Išvykimas',
+        days: 'Kasdien',
+        stops: [{ name: 'Ignalina', time: '06:35' }, { name: 'Baltys', time: '06:42' }, { name: 'Vidiškės', time: '06:46' }, { name: 'Maksimonys', time: '06:51' }, { name: 'Girininkija', time: '06:56' }, { name: 'N.Daugėliškis', time: '06:59' }, { name: 'Kampelis', time: '07:02' }, { name: 'Taujūnai', time: '07:05' }, { name: 'Ožionių kryžkelė', time: '07:08' }, { name: 'Janionys', time: '07:10' }, { name: 'Padysnis', time: '07:13' }, { name: 'Pamunė', time: '07:15' }, { name: 'Mažėnai', time: '07:19' }, { name: 'Gervelės', time: '07:22' }, { name: 'Medeišiai', time: '07:26' }, { name: 'Čižiūnai', time: '07:31' }, { name: 'Verginiai', time: '07:34' }, { name: 'Rimšė', time: '07:37' }, { name: 'Kalninė', time: '07:40' }, { name: 'Keižiai', time: '07:43' }, { name: 'Bikėnai', time: '07:47' }, { name: 'Kaniūkai', time: '07:49' }, { name: 'Mokykla', time: '07:50' }, { name: 'Dūkštas', time: '08:09' }, { name: 'Vaškonys', time: '08:16' }, { name: 'Beržininkai', time: '08:18' }, { name: 'Bėgūnava', time: '08:21' }, { name: 'Kalviškis', time: '08:22' }, { name: 'Magūnai', time: '08:25' }, { name: 'Statybos bazė', time: '08:29' }, { name: 'Sankryža', time: '08:30' }, { name: 'Sandėliai', time: '08:33' }, { name: 'Visaginas I', time: '08:37' }, { name: 'Visaginas II', time: '08:38' }],
+      },
+      {
+        id: '51-ret-1',
+        routeNumber: '51',
+        routeName: 'Ignalina–Visaginas per Rimšę',
+        direction: 'Grįžimas',
+        days: 'Kasdien',
+        stops: [{ name: 'Visaginas II', time: '09:13' }, { name: 'Visaginas I', time: '09:15' }, { name: 'Sandėliai', time: '09:18' }, { name: 'Sankryža', time: '09:21' }, { name: 'Statybos bazė', time: '09:22' }, { name: 'Magūnai', time: '09:26' }, { name: 'Kalviškis', time: '09:29' }, { name: 'Bėgūnava', time: '09:30' }, { name: 'Beržininkai', time: '09:33' }, { name: 'Vaškonys', time: '09:36' }, { name: 'Dūkštas', time: '09:42' }, { name: 'Mokykla', time: '09:46' }, { name: 'Kaniūkai', time: '09:52' }, { name: 'Bikėnai', time: '09:54' }, { name: 'Keižiai', time: '09:58' }, { name: 'Kalninė', time: '10:01' }, { name: 'Rimšė', time: '10:04' }, { name: 'Verginiai', time: '10:08' }, { name: 'Čižiūnai', time: '10:11' }, { name: 'Medeišiai', time: '10:17' }, { name: 'Gervelės', time: '10:22' }, { name: 'Mažėnai', time: '10:26' }, { name: 'Pamunė', time: '10:31' }, { name: 'Padysnis', time: '10:34' }, { name: 'Janionys', time: '10:38' }, { name: 'Ožionių kryžkelė', time: '10:40' }, { name: 'Taujūnai', time: '10:44' }, { name: 'Kampelis', time: '10:47' }, { name: 'N.Daugėliškis', time: '10:52' }, { name: 'Girininkija', time: '10:55' }, { name: 'Maksimonys', time: '11:00' }, { name: 'Vidiškės', time: '11:05' }, { name: 'Baltys', time: '11:08' }, { name: 'Ignalina', time: '11:13' }],
+      },
+      {
+        id: '52-out-1',
+        routeNumber: '52',
+        routeName: 'VISAGINAS PER DŪKŠTĄ',
+        direction: 'Išvykimas',
+        days: 'Darbo dienomis',
+        stops: [{ name: 'Ignalina', time: '05:05' }, { name: 'Kylatrakis', time: '05:08' }, { name: 'Ažėnai', time: '05:10' }, { name: 'Pašvoginė', time: '05:12' }, { name: 'Kazitiškis', time: '05:15' }, { name: 'Rupinsko kryžkelė', time: '05:18' }, { name: 'Malvinavas', time: '05:20' }, { name: 'Meilūnai', time: '05:24' }, { name: 'Ligūnai', time: '05:28' }, { name: 'Tumalinė', time: '05:32' }, { name: 'Dūkštas', time: '05:37' }, { name: 'Vaškonys', time: '05:42' }, { name: 'Beržininkai', time: '05:45' }, { name: 'Bėgūnai', time: '05:47' }, { name: 'Kalviškis', time: '05:49' }, { name: 'Magūnai', time: '05:53' }, { name: 'Statybos bazė', time: '05:57' }, { name: 'Sankryža', time: '05:59' }, { name: 'Sandėlis', time: '06:02' }, { name: 'Visaginas I', time: '06:06' }, { name: 'Visaginas II', time: '06:07' }],
+      },
+      {
+        id: '52-out-2',
+        routeNumber: '52',
+        routeName: 'VISAGINAS PER DŪKŠTĄ',
+        direction: 'Išvykimas',
+        days: 'Darbo dienomis',
+        stops: [{ name: 'Ignalina', time: '11:30' }, { name: 'Kylatrakis', time: '11:40' }, { name: 'Ažėnai', time: '11:43' }, { name: 'Pašvoginė', time: '11:45' }, { name: 'Kazitiškis', time: '11:50' }, { name: 'Rupinsko kryžkelė', time: '11:54' }, { name: 'Malvinavas', time: '11:57' }, { name: 'Meilūnai', time: '12:02' }, { name: 'Ligūnai', time: '12:07' }, { name: 'Tumalinė', time: '12:11' }, { name: 'Dūkštas', time: '12:15' }, { name: 'Vaškonys', time: '12:20' }, { name: 'Beržininkai', time: '12:23' }, { name: 'Bėgūnai', time: '12:25' }, { name: 'Kalviškis', time: '12:27' }, { name: 'Magūnai', time: '12:31' }, { name: 'Statybos bazė', time: '12:35' }, { name: 'Sankryža', time: '12:37' }, { name: 'Sandėlis', time: '12:40' }, { name: 'Visaginas I', time: '12:44' }, { name: 'Visaginas II', time: '12:45' }],
+      },
+      {
+        id: '53-out-1',
+        routeNumber: '53',
+        routeName: 'IGNALINA- N. DAUGĖLIŠKIS',
+        direction: 'Išvykimas',
+        days: 'Darbo dienomis',
+        stops: [{ name: 'Ignalina', time: '07:30' }, { name: 'Baltys', time: '07:35' }, { name: 'Vidiškės', time: '07:40' }, { name: 'Maksimonys', time: '07:43' }, { name: 'Girininkija', time: '07:45' }, { name: 'N.Daugėliškis', time: '07:50' }],
+      },
+      {
+        id: '61-out-1',
+        routeNumber: '61',
+        routeName: 'IGNALINA- MEIRONYS',
+        direction: 'Išvykimas',
+        days: 'Kasdien',
+        stops: [{ name: 'Ignalina', time: '08:10' }, { name: 'Ligoninė', time: '08:12' }, { name: 'Akligatvis', time: '08:14' }, { name: 'Strigailiškis', time: '08:16' }, { name: 'Gaveikėnai', time: '08:21' }, { name: 'Dringykštis', time: '08:24' }, { name: 'Meironys I', time: '08:26' }, { name: 'Meironys II', time: '08:28' }],
+      },
+      {
+        id: '69-out-1',
+        routeNumber: '69',
+        routeName: 'IGNALINA–GILŪTOS',
+        direction: 'Išvykimas',
+        days: 'Kasdien',
+        stops: [{ name: 'Ignalina', time: '10:00' }, { name: 'Bėčiūnai I', time: '10:04' }, { name: 'Bėčiūnai II', time: '10:05' }, { name: 'Zuikos I', time: '10:07' }, { name: 'Zuikos II', time: '10:08' }, { name: 'Panižiškė', time: '10:10' }, { name: 'Ceikinėliai', time: '10:12' }, { name: 'Sauliai', time: '10:14' }, { name: 'Ceikiniai', time: '10:17' }, { name: 'Zatišius', time: '10:20' }, { name: 'Budriškė', time: '10:22' }, { name: 'Rubelninkai', time: '10:24' }, { name: 'Krikonys I', time: '10:26' }, { name: 'Krikonys II', time: '10:27' }, { name: 'Mielagėnai', time: '10:31' }, { name: 'Paliesiaus dvaras', time: '10:34' }, { name: 'Motiejiškė', time: '10:38' }, { name: 'Gilūtos', time: '10:42' }],
+      },
+      {
+        id: '71-out-1',
+        routeNumber: '71',
+        routeName: 'IGNALINA- ANTALKSNĖ',
+        direction: 'Išvykimas',
+        days: 'Darbo dienomis',
+        stops: [{ name: 'Ignalina', time: '06:30' }, { name: 'Ligoninė', time: '06:32' }, { name: 'Palūšė', time: '06:38' }, { name: 'Šakarva', time: '06:43' }, { name: 'Motiejūnai', time: '06:45' }, { name: 'Grikiapelė', time: '06:48' }, { name: 'Pupiškė', time: '06:50' }, { name: 'Linkmenys', time: '06:57' }, { name: 'Mozūriškė', time: '07:01' }, { name: 'Antalksnė', time: '07:05' }],
+      }
+    ];
 
-  <div id="routesList">Kraunama...</div>
-</div>
+    const dayTypes = ['Kasdien', 'Darbo dienomis', 'Šventinėmis'];
 
-<script>
-let routesData = [];
+    const allRouteNumbers = Array.from(new Set(busTrips.map(t => t.routeNumber))).sort((a,b) => Number(a) - Number(b));
 
-async function loadData() {
-  try {
-    const response = await fetch('routes.json');
-    if (!response.ok) throw new Error("HTTP klaida: " + response.status);
-    
-    const data = await response.json();
-    routesData = Array.isArray(data) ? data : (data.marsrutai || data.routes || []);
-    renderRoutes(routesData);
-  } catch (err) {
-    console.error("Klaida:", err);
-    document.getElementById('routesList').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Klaida kraunant duomenis.</div>';
-  }
-}
+    const allStopsSet = new Set();
+    busTrips.forEach(t => t.stops.forEach(s => allStopsSet.add(s.name.trim())));
+    const allStops = Array.from(allStopsSet).sort();
 
-function renderRoutes(routes) {
-  const container = document.getElementById('routesList');
-  const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
-  container.innerHTML = '';
+    // --- PROGRAMOS KODAS ---
+    function matchesQuery(trip, q) {
+      const needle = q.trim().toLowerCase();
+      if (!needle) return true;
+      if (trip.routeNumber.toLowerCase().includes(needle)) return true;
+      if (trip.routeName.toLowerCase().includes(needle)) return true;
+      if (trip.direction.toLowerCase().includes(needle)) return true;
+      return trip.stops.some(
+        (s) => s.name.toLowerCase().includes(needle) || s.time.toLowerCase().includes(needle)
+      );
+    }
 
-  if (!routes || routes.length === 0) {
-    container.innerHTML = '<div style="text-align:center; font-size:1.2rem; padding:20px;">Maršrutų nerasta.</div>';
-    return;
-  }
+    function tripFirstTime(trip) {
+      return trip.stops[0]?.time ?? '';
+    }
 
-  routes.forEach((route, index) => {
-    const card = document.createElement('div');
-    card.className = 'route-card';
+    function App() {
+      const [query, setQuery] = useState('');
+      const [dayFilter, setDayFilter] = useState('Visos');
+      const [routeFilter, setRouteFilter] = useState('Visi');
+      const [stopFilter, setStopFilter] = useState('Visos');
+      const [expandedId, setExpandedId] = useState(null);
 
-    let blocksHTML = '';
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, [expandedId, query, dayFilter, routeFilter, stopFilter]);
 
-    (route.reisai || []).forEach((reisas, rIdx) => {
-      const dienosStr = Array.isArray(reisas.dienos) ? reisas.dienos.join(', ') : (reisas.dienos || '');
-      const rida = reisas.rida_km ? `${reisas.rida_km} km` : '';
+      const filtered = useMemo(() => {
+        return busTrips
+          .filter((t) => dayFilter === 'Visos' || t.days === dayFilter)
+          .filter((t) => routeFilter === 'Visi' || t.routeNumber === routeFilter)
+          .filter((t) => stopFilter === 'Visos' || t.stops.some((s) => s.name === stopFilter))
+          .filter((t) => matchesQuery(t, query))
+          .sort((a, b) => tripFirstTime(a).localeCompare(tripFirstTime(b)));
+      }, [query, dayFilter, routeFilter, stopFilter]);
 
-      let stopsHTML = '';
-      (reisas.stoteles || []).forEach(st => {
-        const isMatched = searchQuery && st.pavadinimas.toLowerCase().includes(searchQuery);
-        stopsHTML += `
-          <div class="stop-row ${isMatched ? 'highlight' : ''}">
-            <span class="stop-name">${st.pavadinimas} ${st.pastaba ? `<small>(${st.pastaba})</small>` : ''}</span>
-            <span class="stop-time">${st.laikas}</span>
-            <span class="stop-km">${st.rida_nuo_pradzios !== undefined ? st.rida_nuo_pradzios + ' km' : ''}</span>
-          </div>
-        `;
-      });
+      const hasActiveFilters =
+        query.trim() !== '' || dayFilter !== 'Visos' || routeFilter !== 'Visi' || stopFilter !== 'Visos';
 
-      const listId = `stops-${index}-${rIdx}`;
-      // Jei vykdoma paieška, automatiškai atskleidžiame stotelių sąrašą
-      const isOpen = searchQuery.length > 0;
+      const resetFilters = () => {
+        setQuery('');
+        setDayFilter('Visos');
+        setRouteFilter('Visi');
+        setStopFilter('Visos');
+      };
 
-      blocksHTML += `
-        <div class="schedule-block">
-          <div class="schedule-header">
-            <span class="days">🗓️ ${dienosStr}</span>
-            ${rida ? `<span class="km">📏 ${rida}</span>` : ''}
-          </div>
-          <button class="toggle-btn" onclick="toggleStops('${listId}')">
-            ${isOpen ? 'Slėpti stoteles ▲' : 'Rodyti visas stoteles (🏏 ' + (reisas.stoteles || []).length + ') ▼'}
-          </button>
-          <div id="${listId}" class="stops-list ${isOpen ? 'open' : ''}">
-            ${stopsHTML}
-          </div>
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-900">
+          <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
+            <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-600 text-white shadow-sm">
+                <i data-lucide="bus" className="w-5 h-5"></i>
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold leading-tight">Ignalinos rajono autobusai</h1>
+                <p className="text-xs text-slate-500">Maršrutų tvarkaraštis ir paieška</p>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-5xl mx-auto px-4 py-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
+              <div className="relative">
+                <i data-lucide="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Ieškoti maršruto, stotelės ar laiko (pvz. Dūkštas, 51, 07:00)..."
+                  className="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition text-sm"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <i data-lucide="x" className="w-5 h-5"></i>
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <FilterSelect
+                  icon="calendar-days"
+                  label="Dienos"
+                  value={dayFilter}
+                  options={['Visos', ...dayTypes]}
+                  onChange={setDayFilter}
+                />
+                <FilterSelect
+                  icon="route"
+                  label="Maršrutas"
+                  value={routeFilter}
+                  options={['Visi', ...allRouteNumbers]}
+                  onChange={setRouteFilter}
+                />
+                <FilterSelect
+                  icon="map-pin"
+                  label="Stotelė"
+                  value={stopFilter}
+                  options={['Visos', ...allStops]}
+                  onChange={setStopFilter}
+                />
+              </div>
+
+              {hasActiveFilters && (
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs text-slate-500">
+                    Rasta: <span className="font-semibold text-slate-700">{filtered.length}</span> {filtered.length === 1 ? 'išvykimas' : 'išvykimų'}
+                  </span>
+                  <button
+                    onClick={resetFilters}
+                    className="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                  >
+                    <i data-lucide="x" className="w-3.5 h-3.5"></i> Išvalyti filtrus
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {filtered.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                    <i data-lucide="search" className="w-6 h-6 text-slate-400"></i>
+                  </div>
+                  <p className="font-medium text-slate-700">Nieko nerasta</p>
+                  <p className="text-sm text-slate-500 mt-1">Pakeiskite paieškos žodį ar filtrus.</p>
+                </div>
+              ) : (
+                filtered.map((trip) => {
+                  const expanded = expandedId === trip.id;
+                  return (
+                    <article key={trip.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md">
+                      <button
+                        onClick={() => setExpandedId(expanded ? null : trip.id)}
+                        className="w-full text-left p-4 flex items-center gap-4"
+                      >
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-lg">
+                          {trip.routeNumber}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h2 className="font-semibold text-slate-900 truncate">{trip.routeName}</h2>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
+                            <span className="inline-flex items-center gap-1">
+                              <i data-lucide="clock" className="w-3.5 h-3.5"></i> {tripFirstTime(trip)}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <i data-lucide="map-pin" className="w-3.5 h-3.5"></i> {trip.stops.length} stot.
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <i data-lucide="calendar-days" className="w-3.5 h-3.5"></i> {trip.days}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                              {trip.direction} → {trip.stops[trip.stops.length - 1]?.name}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 text-slate-400">
+                          <i data-lucide="chevron-down" className={`w-5 h-5 transition-transform ${expanded ? 'rotate-180' : ''}`}></i>
+                        </div>
+                      </button>
+
+                      {expanded && (
+                        <div className="border-t border-slate-100 bg-slate-50/50 px-4 py-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                              {trip.direction}
+                            </span>
+                          </div>
+                          <ol className="relative border-l-2 border-emerald-200 ml-2 space-y-3">
+                            {trip.stops.map((stop, i) => (
+                              <li key={i} className="pl-4 relative">
+                                <span className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+                                <div className="flex items-baseline justify-between gap-3">
+                                  <span className="text-sm font-medium text-slate-800">{stop.name}</span>
+                                  <span className="text-sm font-semibold text-emerald-700 tabular-nums">{stop.time}</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })
+              )}
+            </div>
+
+            <footer className="mt-10 text-center text-xs text-slate-400">
+              <p>Ignalinos rajono autobusų grafikas. Duomenys pateikti informaciniais tikslais.</p>
+            </footer>
+          </main>
         </div>
-      `;
-    });
+      );
+    }
 
-    card.innerHTML = `
-      <div class="route-header">
-        <span class="route-number">Nr. ${route.id || route.nr}</span>
-        <span class="route-title">${route.pavadinimas || route.title}</span>
-      </div>
-      <div>${blocksHTML}</div>
-    `;
-    container.appendChild(card);
-  });
-}
+    function FilterSelect({ icon, label, value, options, onChange }) {
+      return (
+        <label className="block">
+          <span className="sr-only">{label}</span>
+          <div className="relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <i data-lucide={icon} className="w-4 h-4"></i>
+            </div>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition appearance-none cursor-pointer"
+            >
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt === 'Visos' || opt === 'Visi' ? `${label}: visos` : `${label}: ${opt}`}
+                </option>
+              ))}
+            </select>
+            <i data-lucide="chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+          </div>
+        </label>
+      );
+    }
 
-function toggleStops(id) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.classList.toggle('open');
-  }
-}
-
-function filterRoutes() {
-  const query = document.getElementById('searchInput').value.toLowerCase();
-  const day = document.getElementById('dayFilter').value;
-
-  const filtered = routesData.filter(route => {
-    const title = (route.pavadinimas || route.title || '').toLowerCase();
-    const id = String(route.id || route.nr || '').toLowerCase();
-    
-    const stotelesStr = (route.reisai || [])
-      .flatMap(r => r.stoteles || [])
-      .map(s => (s.pavadinimas || '').toLowerCase())
-      .join(' ');
-
-    const matchesSearch = title.includes(query) || id.includes(query) || stotelesStr.includes(query);
-
-    if (day === 'all') return matchesSearch;
-
-    const matchesDay = (route.reisai || []).some(r => {
-      const dienos = Array.isArray(r.dienos) ? r.dienos.map(d => d.toLowerCase()) : [];
-      const isWorkday = dienos.some(d => ['pirmadienis', 'antradienis', 'trečiadienis', 'ketvirtadienis', 'penktadienis'].includes(d));
-      const isWeekend = dienos.some(d => ['šeštadienis', 'sekmadienis'].includes(d));
-
-      if (day === 'workdays') return isWorkday;
-      if (day === 'weekend') return isWeekend;
-      return true;
-    });
-
-    return matchesSearch && matchesDay;
-  });
-
-  renderRoutes(filtered);
-}
-
-loadData();
-</script>
-
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
