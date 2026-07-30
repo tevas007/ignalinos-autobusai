@@ -6,7 +6,7 @@
   <title>Ignalinos rajono autobusai</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Vue.js 3 (veikia iškart naršyklėje be jokių kompiuterių/buildų!) -->
+  <!-- Vue.js 3 -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -15,13 +15,18 @@
   <div id="app" class="min-h-screen">
     <!-- Header -->
     <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
-      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-600 text-white shadow-sm">
-          <i data-lucide="bus" class="w-5 h-5"></i>
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-600 text-white shadow-sm">
+            <i data-lucide="bus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-semibold leading-tight">Ignalinos rajono autobusai</h1>
+            <p class="text-xs text-slate-500">Maršrutų tvarkaraštis ir paieška</p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-lg font-semibold leading-tight">Ignalinos rajono autobusai</h1>
-          <p class="text-xs text-slate-500">Maršrutų tvarkaraštis ir paieška</p>
+        <div v-if="loading" class="text-xs text-slate-400 animate-pulse">
+          Kraunami duomenys...
         </div>
       </div>
     </header>
@@ -94,7 +99,7 @@
           </span>
           <button
             @click="resetFilters"
-            className="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+            class="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
           >
             Išvalyti filtrus
           </button>
@@ -103,14 +108,18 @@
 
       <!-- Trips List -->
       <div class="mt-6 space-y-3">
-        <div v-if="filteredTrips.length === 0" class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+        <div v-if="loading" class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+          <p class="font-medium text-slate-700">Kraunami tvarkaraščiai...</p>
+        </div>
+
+        <div v-else-if="filteredTrips.length === 0" class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
           <p class="font-medium text-slate-700">Nieko nerasta</p>
           <p class="text-sm text-slate-500 mt-1">Pakeiskite paieškos žodį ar filtrus.</p>
         </div>
 
         <article
           v-for="trip in filteredTrips"
-          :key="trip.id"
+          :key="trip.id || (trip.routeNumber + '-' + trip.stops[0]?.time)"
           class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md"
         >
           <button
@@ -123,8 +132,8 @@
             <div class="flex-1 min-w-0">
               <h2 class="font-semibold text-slate-900 truncate">{{ trip.routeName }}</h2>
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1">
-                  <i data-lucide="clock" class="w-3.5 h-3.5"></i> {{ trip.stops[0]?.time }}
+                <span class="inline-flex items-center gap-1 font-semibold text-slate-700">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-600"></i> {{ trip.stops[0]?.time }}
                 </span>
                 <span class="inline-flex items-center gap-1">
                   <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> {{ trip.stops.length }} stot.
@@ -132,7 +141,7 @@
                 <span class="inline-flex items-center gap-1">
                   <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> {{ trip.days }}
                 </span>
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                <span v-if="trip.direction" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
                   {{ trip.direction }} → {{ trip.stops[trip.stops.length - 1]?.name }}
                 </span>
               </div>
@@ -144,7 +153,7 @@
 
           <!-- Expanded Stops -->
           <div v-if="expandedId === trip.id" class="border-t border-slate-100 bg-slate-50/50 px-4 py-4">
-            <div class="flex items-center gap-2 mb-3">
+            <div v-if="trip.direction" class="flex items-center gap-2 mb-3">
               <span class="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
                 {{ trip.direction }}
               </span>
@@ -169,104 +178,63 @@
   </div>
 
   <script>
-    const busTrips = [
-      {
-        id: '51-out-1',
-        routeNumber: '51',
-        routeName: 'Ignalina–Visaginas per Rimšę',
-        direction: 'Išvykimas',
-        days: 'Kasdien',
-        stops: [{ name: 'Ignalina', time: '06:35' }, { name: 'Baltys', time: '06:42' }, { name: 'Vidiškės', time: '06:46' }, { name: 'Maksimonys', time: '06:51' }, { name: 'Girininkija', time: '06:56' }, { name: 'N.Daugėliškis', time: '06:59' }, { name: 'Kampelis', time: '07:02' }, { name: 'Taujūnai', time: '07:05' }, { name: 'Ožionių kryžkelė', time: '07:08' }, { name: 'Janionys', time: '07:10' }, { name: 'Padysnis', time: '07:13' }, { name: 'Pamunė', time: '07:15' }, { name: 'Mažėnai', time: '07:19' }, { name: 'Gervelės', time: '07:22' }, { name: 'Medeišiai', time: '07:26' }, { name: 'Čižiūnai', time: '07:31' }, { name: 'Verginiai', time: '07:34' }, { name: 'Rimšė', time: '07:37' }, { name: 'Kalninė', time: '07:40' }, { name: 'Keižiai', time: '07:43' }, { name: 'Bikėnai', time: '07:47' }, { name: 'Kaniūkai', time: '07:49' }, { name: 'Mokykla', time: '07:50' }, { name: 'Dūkštas', time: '08:09' }, { name: 'Vaškonys', time: '08:16' }, { name: 'Beržininkai', time: '08:18' }, { name: 'Bėgūnava', time: '08:21' }, { name: 'Kalviškis', time: '08:22' }, { name: 'Magūnai', time: '08:25' }, { name: 'Statybos bazė', time: '08:29' }, { name: 'Sankryža', time: '08:30' }, { name: 'Sandėliai', time: '08:33' }, { name: 'Visaginas I', time: '08:37' }, { name: 'Visaginas II', time: '08:38' }],
-      },
-      {
-        id: '51-ret-1',
-        routeNumber: '51',
-        routeName: 'Ignalina–Visaginas per Rimšę',
-        direction: 'Grįžimas',
-        days: 'Kasdien',
-        stops: [{ name: 'Visaginas II', time: '09:13' }, { name: 'Visaginas I', time: '09:15' }, { name: 'Sandėliai', time: '09:18' }, { name: 'Sankryža', time: '09:21' }, { name: 'Statybos bazė', time: '09:22' }, { name: 'Magūnai', time: '09:26' }, { name: 'Kalviškis', time: '09:29' }, { name: 'Bėgūnava', time: '09:30' }, { name: 'Beržininkai', time: '09:33' }, { name: 'Vaškonys', time: '09:36' }, { name: 'Dūkštas', time: '09:42' }, { name: 'Mokykla', time: '09:46' }, { name: 'Kaniūkai', time: '09:52' }, { name: 'Bikėnai', time: '09:54' }, { name: 'Keižiai', time: '09:58' }, { name: 'Kalninė', time: '10:01' }, { name: 'Rimšė', time: '10:04' }, { name: 'Verginiai', time: '10:08' }, { name: 'Čižiūnai', time: '10:11' }, { name: 'Medeišiai', time: '10:17' }, { name: 'Gervelės', time: '10:22' }, { name: 'Mažėnai', time: '10:26' }, { name: 'Pamunė', time: '10:31' }, { name: 'Padysnis', time: '10:34' }, { name: 'Janionys', time: '10:38' }, { name: 'Ožionių kryžkelė', time: '10:40' }, { name: 'Taujūnai', time: '10:44' }, { name: 'Kampelis', time: '10:47' }, { name: 'N.Daugėliškis', time: '10:52' }, { name: 'Girininkija', time: '10:55' }, { name: 'Maksimonys', time: '11:00' }, { name: 'Vidiškės', time: '11:05' }, { name: 'Baltys', time: '11:08' }, { name: 'Ignalina', time: '11:13' }],
-      },
-      {
-        id: '52-out-1',
-        routeNumber: '52',
-        routeName: 'VISAGINAS PER DŪKŠTĄ',
-        direction: 'Išvykimas',
-        days: 'Darbo dienomis',
-        stops: [{ name: 'Ignalina', time: '05:05' }, { name: 'Kylatrakis', time: '05:08' }, { name: 'Ažėnai', time: '05:10' }, { name: 'Pašvoginė', time: '05:12' }, { name: 'Kazitiškis', time: '05:15' }, { name: 'Rupinsko kryžkelė', time: '05:18' }, { name: 'Malvinavas', time: '05:20' }, { name: 'Meilūnai', time: '05:24' }, { name: 'Ligūnai', time: '05:28' }, { name: 'Tumalinė', time: '05:32' }, { name: 'Dūkštas', time: '05:37' }, { name: 'Vaškonys', time: '05:42' }, { name: 'Beržininkai', time: '05:45' }, { name: 'Bėgūnai', time: '05:47' }, { name: 'Kalviškis', time: '05:49' }, { name: 'Magūnai', time: '05:53' }, { name: 'Statybos bazė', time: '05:57' }, { name: 'Sankryža', time: '05:59' }, { name: 'Sandėlis', time: '06:02' }, { name: 'Visaginas I', time: '06:06' }, { name: 'Visaginas II', time: '06:07' }],
-      },
-      {
-        id: '52-out-2',
-        routeNumber: '52',
-        routeName: 'VISAGINAS PER DŪKŠTĄ',
-        direction: 'Išvykimas',
-        days: 'Darbo dienomis',
-        stops: [{ name: 'Ignalina', time: '11:30' }, { name: 'Kylatrakis', time: '11:40' }, { name: 'Ažėnai', time: '11:43' }, { name: 'Pašvoginė', time: '11:45' }, { name: 'Kazitiškis', time: '11:50' }, { name: 'Rupinsko kryžkelė', time: '11:54' }, { name: 'Malvinavas', time: '11:57' }, { name: 'Meilūnai', time: '12:02' }, { name: 'Ligūnai', time: '12:07' }, { name: 'Tumalinė', time: '12:11' }, { name: 'Dūkštas', time: '12:15' }, { name: 'Vaškonys', time: '12:20' }, { name: 'Beržininkai', time: '12:23' }, { name: 'Bėgūnai', time: '12:25' }, { name: 'Kalviškis', time: '12:27' }, { name: 'Magūnai', time: '12:31' }, { name: 'Statybos bazė', time: '12:35' }, { name: 'Sankryža', time: '12:37' }, { name: 'Sandėlis', time: '12:40' }, { name: 'Visaginas I', time: '12:44' }, { name: 'Visaginas II', time: '12:45' }],
-      },
-      {
-        id: '53-out-1',
-        routeNumber: '53',
-        routeName: 'IGNALINA- N. DAUGĖLIŠKIS',
-        direction: 'Išvykimas',
-        days: 'Darbo dienomis',
-        stops: [{ name: 'Ignalina', time: '07:30' }, { name: 'Baltys', time: '07:35' }, { name: 'Vidiškės', time: '07:40' }, { name: 'Maksimonys', time: '07:43' }, { name: 'Girininkija', time: '07:45' }, { name: 'N.Daugėliškis', time: '07:50' }],
-      },
-      {
-        id: '61-out-1',
-        routeNumber: '61',
-        routeName: 'IGNALINA- MEIRONYS',
-        direction: 'Išvykimas',
-        days: 'Kasdien',
-        stops: [{ name: 'Ignalina', time: '08:10' }, { name: 'Ligoninė', time: '08:12' }, { name: 'Akligatvis', time: '08:14' }, { name: 'Strigailiškis', time: '08:16' }, { name: 'Gaveikėnai', time: '08:21' }, { name: 'Dringykštis', time: '08:24' }, { name: 'Meironys I', time: '08:26' }, { name: 'Meironys II', time: '08:28' }],
-      },
-      {
-        id: '69-out-1',
-        routeNumber: '69',
-        routeName: 'IGNALINA–GILŪTOS',
-        direction: 'Išvykimas',
-        days: 'Kasdien',
-        stops: [{ name: 'Ignalina', time: '10:00' }, { name: 'Bėčiūnai I', time: '10:04' }, { name: 'Bėčiūnai II', time: '10:05' }, { name: 'Zuikos I', time: '10:07' }, { name: 'Zuikos II', time: '10:08' }, { name: 'Panižiškė', time: '10:10' }, { name: 'Ceikinėliai', time: '10:12' }, { name: 'Sauliai', time: '10:14' }, { name: 'Ceikiniai', time: '10:17' }, { name: 'Zatišius', time: '10:20' }, { name: 'Budriškė', time: '10:22' }, { name: 'Rubelninkai', time: '10:24' }, { name: 'Krikonys I', time: '10:26' }, { name: 'Krikonys II', time: '10:27' }, { name: 'Mielagėnai', time: '10:31' }, { name: 'Paliesiaus dvaras', time: '10:34' }, { name: 'Motiejiškė', time: '10:38' }, { name: 'Gilūtos', time: '10:42' }],
-      },
-      {
-        id: '71-out-1',
-        routeNumber: '71',
-        routeName: 'IGNALINA- ANTALKSNĖ',
-        direction: 'Išvykimas',
-        days: 'Darbo dienomis',
-        stops: [{ name: 'Ignalina', time: '06:30' }, { name: 'Ligoninė', time: '06:32' }, { name: 'Palūšė', time: '06:38' }, { name: 'Šakarva', time: '06:43' }, { name: 'Motiejūnai', time: '06:45' }, { name: 'Grikiapelė', time: '06:48' }, { name: 'Pupiškė', time: '06:50' }, { name: 'Linkmenys', time: '06:57' }, { name: 'Mozūriškė', time: '07:01' }, { name: 'Antalksnė', time: '07:05' }],
-      }
-    ];
-
     const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
     createApp({
       setup() {
+        const busTrips = ref([]);
+        const loading = ref(true);
         const query = ref('');
         const dayFilter = ref('Visos');
         const routeFilter = ref('Visi');
         const stopFilter = ref('Visos');
         const expandedId = ref(null);
 
-        const dayTypes = ['Kasdien', 'Darbo dienomis', 'Šventinėmis'];
-        const allRouteNumbers = Array.from(new Set(busTrips.map(t => t.routeNumber))).sort((a,b) => Number(a) - Number(b));
+        // Uzkrauname routes.json faila dinamiskai
+        const fetchRoutes = async () => {
+          try {
+            const res = await fetch('./routes.json');
+            const data = await res.json();
+            // Jei JSON turi vidini lauka "trips" arba "routes", arba pats yra masyvas:
+            busTrips.value = Array.isArray(data) ? data : (data.trips || data.routes || []);
+          } catch (e) {
+            console.error('Klaida kraunant routes.json:', e);
+          } finally {
+            loading.value = false;
+            refreshIcons();
+          }
+        };
+
+        const dayTypes = computed(() => {
+          const days = new Set(busTrips.value.map(t => t.days).filter(Boolean));
+          return Array.from(days);
+        });
+
+        const allRouteNumbers = computed(() => {
+          const numbers = new Set(busTrips.value.map(t => t.routeNumber).filter(Boolean));
+          return Array.from(numbers).sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true}));
+        });
         
-        const allStopsSet = new Set();
-        busTrips.forEach(t => t.stops.forEach(s => allStopsSet.add(s.name.trim())));
-        const allStops = Array.from(allStopsSet).sort();
+        const allStops = computed(() => {
+          const stopsSet = new Set();
+          busTrips.value.forEach(t => (t.stops || []).forEach(s => s.name && stopsSet.add(s.name.trim())));
+          return Array.from(stopsSet).sort();
+        });
 
         const filteredTrips = computed(() => {
-          return busTrips
+          return busTrips.value
             .filter((t) => dayFilter.value === 'Visos' || t.days === dayFilter.value)
-            .filter((t) => routeFilter.value === 'Visi' || t.routeNumber === routeFilter.value)
-            .filter((t) => stopFilter.value === 'Visos' || t.stops.some((s) => s.name === stopFilter.value))
+            .filter((t) => routeFilter.value === 'Visi' || String(t.routeNumber) === String(routeFilter.value))
+            .filter((t) => stopFilter.value === 'Visos' || (t.stops || []).some((s) => s.name === stopFilter.value))
             .filter((t) => {
               const needle = query.value.trim().toLowerCase();
               if (!needle) return true;
-              return t.routeNumber.toLowerCase().includes(needle) ||
-                     t.routeName.toLowerCase().includes(needle) ||
-                     t.direction.toLowerCase().includes(needle) ||
-                     t.stops.some(s => s.name.toLowerCase().includes(needle) || s.time.toLowerCase().includes(needle));
+              return String(t.routeNumber || '').toLowerCase().includes(needle) ||
+                     String(t.routeName || '').toLowerCase().includes(needle) ||
+                     String(t.direction || '').toLowerCase().includes(needle) ||
+                     (t.stops || []).some(s => String(s.name || '').toLowerCase().includes(needle) || String(s.time || '').toLowerCase().includes(needle));
             })
-            .sort((a, b) => (a.stops[0]?.time || '').localeCompare(b.stops[0]?.time || ''));
+            .sort((a, b) => (a.stops?.[0]?.time || '').localeCompare(b.stops?.[0]?.time || ''));
         });
 
         const hasActiveFilters = computed(() => {
@@ -292,10 +260,12 @@
         };
 
         onMounted(() => {
-          refreshIcons();
+          fetchRoutes();
         });
 
         return {
+          busTrips,
+          loading,
           query,
           dayFilter,
           routeFilter,
