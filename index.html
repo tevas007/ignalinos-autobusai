@@ -6,21 +6,169 @@
   <title>Ignalinos rajono autobusai</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React & React DOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel compiler React JSX'ui -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.min.js"></script>
+  <!-- Vue.js 3 (veikia iškart naršyklėje be jokių kompiuterių/buildų!) -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-50 text-slate-900">
-  <div id="root"></div>
+  <div id="app" class="min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
+        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-600 text-white shadow-sm">
+          <i data-lucide="bus" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold leading-tight">Ignalinos rajono autobusai</h1>
+          <p class="text-xs text-slate-500">Maršrutų tvarkaraštis ir paieška</p>
+        </div>
+      </div>
+    </header>
 
-  <script type="text/babel">
-    const { useState, useMemo, useEffect } = React;
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 py-6">
+      <!-- Search & Filters -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+          <input
+            type="text"
+            v-model="query"
+            placeholder="Ieškoti maršruto, stotelės ar laiko (pvz. Dūkštas, 51, 07:00)..."
+            class="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition text-sm"
+          />
+          <button
+            v-if="query"
+            @click="query = ''"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
 
-    // --- DUOMENYS (busData) ---
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Day Filter -->
+          <div class="relative">
+            <i data-lucide="calendar-days" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+            <select
+              v-model="dayFilter"
+              class="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition appearance-none cursor-pointer"
+            >
+              <option value="Visos">Dienos: visos</option>
+              <option v-for="d in dayTypes" :key="d" :value="d">Dienos: {{ d }}</option>
+            </select>
+            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+          </div>
+
+          <!-- Route Filter -->
+          <div class="relative">
+            <i data-lucide="route" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+            <select
+              v-model="routeFilter"
+              class="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition appearance-none cursor-pointer"
+            >
+              <option value="Visi">Maršrutas: visi</option>
+              <option v-for="r in allRouteNumbers" :key="r" :value="r">Maršrutas: {{ r }}</option>
+            </select>
+            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+          </div>
+
+          <!-- Stop Filter -->
+          <div class="relative">
+            <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+            <select
+              v-model="stopFilter"
+              class="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition appearance-none cursor-pointer"
+            >
+              <option value="Visos">Stotelė: visos</option>
+              <option v-for="s in allStops" :key="s" :value="s">Stotelė: {{ s }}</option>
+            </select>
+            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+          </div>
+        </div>
+
+        <div v-if="hasActiveFilters" class="flex items-center justify-between pt-1">
+          <span class="text-xs text-slate-500">
+            Rasta: <span class="font-semibold text-slate-700">{{ filteredTrips.length }}</span> išvykimų
+          </span>
+          <button
+            @click="resetFilters"
+            className="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+          >
+            Išvalyti filtrus
+          </button>
+        </div>
+      </div>
+
+      <!-- Trips List -->
+      <div class="mt-6 space-y-3">
+        <div v-if="filteredTrips.length === 0" class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+          <p class="font-medium text-slate-700">Nieko nerasta</p>
+          <p class="text-sm text-slate-500 mt-1">Pakeiskite paieškos žodį ar filtrus.</p>
+        </div>
+
+        <article
+          v-for="trip in filteredTrips"
+          :key="trip.id"
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md"
+        >
+          <button
+            @click="toggleTrip(trip.id)"
+            class="w-full text-left p-4 flex items-center gap-4"
+          >
+            <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-lg">
+              {{ trip.routeNumber }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <h2 class="font-semibold text-slate-900 truncate">{{ trip.routeName }}</h2>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
+                <span class="inline-flex items-center gap-1">
+                  <i data-lucide="clock" class="w-3.5 h-3.5"></i> {{ trip.stops[0]?.time }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> {{ trip.stops.length }} stot.
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> {{ trip.days }}
+                </span>
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                  {{ trip.direction }} → {{ trip.stops[trip.stops.length - 1]?.name }}
+                </span>
+              </div>
+            </div>
+            <div class="flex-shrink-0 text-slate-400">
+              <i data-lucide="chevron-down" :class="['w-5 h-5 transition-transform', expandedId === trip.id ? 'rotate-180' : '']"></i>
+            </div>
+          </button>
+
+          <!-- Expanded Stops -->
+          <div v-if="expandedId === trip.id" class="border-t border-slate-100 bg-slate-50/50 px-4 py-4">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                {{ trip.direction }}
+              </span>
+            </div>
+            <ol class="relative border-l-2 border-emerald-200 ml-2 space-y-3">
+              <li v-for="(stop, index) in trip.stops" :key="index" class="pl-4 relative">
+                <span class="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+                <div class="flex items-baseline justify-between gap-3">
+                  <span class="text-sm font-medium text-slate-800">{{ stop.name }}</span>
+                  <span class="text-sm font-semibold text-emerald-700 tabular-nums">{{ stop.time }}</span>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </article>
+      </div>
+
+      <footer class="mt-10 text-center text-xs text-slate-400">
+        <p>Ignalinos rajono autobusų grafikas. Duomenys pateikti informaciniais tikslais.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
     const busTrips = [
       {
         id: '51-out-1',
@@ -88,240 +236,81 @@
       }
     ];
 
-    const dayTypes = ['Kasdien', 'Darbo dienomis', 'Šventinėmis'];
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
-    const allRouteNumbers = Array.from(new Set(busTrips.map(t => t.routeNumber))).sort((a,b) => Number(a) - Number(b));
+    createApp({
+      setup() {
+        const query = ref('');
+        const dayFilter = ref('Visos');
+        const routeFilter = ref('Visi');
+        const stopFilter = ref('Visos');
+        const expandedId = ref(null);
 
-    const allStopsSet = new Set();
-    busTrips.forEach(t => t.stops.forEach(s => allStopsSet.add(s.name.trim())));
-    const allStops = Array.from(allStopsSet).sort();
+        const dayTypes = ['Kasdien', 'Darbo dienomis', 'Šventinėmis'];
+        const allRouteNumbers = Array.from(new Set(busTrips.map(t => t.routeNumber))).sort((a,b) => Number(a) - Number(b));
+        
+        const allStopsSet = new Set();
+        busTrips.forEach(t => t.stops.forEach(s => allStopsSet.add(s.name.trim())));
+        const allStops = Array.from(allStopsSet).sort();
 
-    // --- PROGRAMOS KODAS ---
-    function matchesQuery(trip, q) {
-      const needle = q.trim().toLowerCase();
-      if (!needle) return true;
-      if (trip.routeNumber.toLowerCase().includes(needle)) return true;
-      if (trip.routeName.toLowerCase().includes(needle)) return true;
-      if (trip.direction.toLowerCase().includes(needle)) return true;
-      return trip.stops.some(
-        (s) => s.name.toLowerCase().includes(needle) || s.time.toLowerCase().includes(needle)
-      );
-    }
+        const filteredTrips = computed(() => {
+          return busTrips
+            .filter((t) => dayFilter.value === 'Visos' || t.days === dayFilter.value)
+            .filter((t) => routeFilter.value === 'Visi' || t.routeNumber === routeFilter.value)
+            .filter((t) => stopFilter.value === 'Visos' || t.stops.some((s) => s.name === stopFilter.value))
+            .filter((t) => {
+              const needle = query.value.trim().toLowerCase();
+              if (!needle) return true;
+              return t.routeNumber.toLowerCase().includes(needle) ||
+                     t.routeName.toLowerCase().includes(needle) ||
+                     t.direction.toLowerCase().includes(needle) ||
+                     t.stops.some(s => s.name.toLowerCase().includes(needle) || s.time.toLowerCase().includes(needle));
+            })
+            .sort((a, b) => (a.stops[0]?.time || '').localeCompare(b.stops[0]?.time || ''));
+        });
 
-    function tripFirstTime(trip) {
-      return trip.stops[0]?.time ?? '';
-    }
+        const hasActiveFilters = computed(() => {
+          return query.value.trim() !== '' || dayFilter.value !== 'Visos' || routeFilter.value !== 'Visi' || stopFilter.value !== 'Visos';
+        });
 
-    function App() {
-      const [query, setQuery] = useState('');
-      const [dayFilter, setDayFilter] = useState('Visos');
-      const [routeFilter, setRouteFilter] = useState('Visi');
-      const [stopFilter, setStopFilter] = useState('Visos');
-      const [expandedId, setExpandedId] = useState(null);
+        const resetFilters = () => {
+          query.value = '';
+          dayFilter.value = 'Visos';
+          routeFilter.value = 'Visi';
+          stopFilter.value = 'Visos';
+        };
 
-      useEffect(() => {
-        if (window.lucide) {
-          window.lucide.createIcons();
-        }
-      }, [expandedId, query, dayFilter, routeFilter, stopFilter]);
+        const refreshIcons = () => {
+          nextTick(() => {
+            if (window.lucide) window.lucide.createIcons();
+          });
+        };
 
-      const filtered = useMemo(() => {
-        return busTrips
-          .filter((t) => dayFilter === 'Visos' || t.days === dayFilter)
-          .filter((t) => routeFilter === 'Visi' || t.routeNumber === routeFilter)
-          .filter((t) => stopFilter === 'Visos' || t.stops.some((s) => s.name === stopFilter))
-          .filter((t) => matchesQuery(t, query))
-          .sort((a, b) => tripFirstTime(a).localeCompare(tripFirstTime(b)));
-      }, [query, dayFilter, routeFilter, stopFilter]);
+        const toggleTrip = (id) => {
+          expandedId.value = expandedId.value === id ? null : id;
+          refreshIcons();
+        };
 
-      const hasActiveFilters =
-        query.trim() !== '' || dayFilter !== 'Visos' || routeFilter !== 'Visi' || stopFilter !== 'Visos';
+        onMounted(() => {
+          refreshIcons();
+        });
 
-      const resetFilters = () => {
-        setQuery('');
-        setDayFilter('Visos');
-        setRouteFilter('Visi');
-        setStopFilter('Visos');
-      };
-
-      return (
-        <div className="min-h-screen bg-slate-50 text-slate-900">
-          <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
-            <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-600 text-white shadow-sm">
-                <i data-lucide="bus" className="w-5 h-5"></i>
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold leading-tight">Ignalinos rajono autobusai</h1>
-                <p className="text-xs text-slate-500">Maršrutų tvarkaraštis ir paieška</p>
-              </div>
-            </div>
-          </header>
-
-          <main className="max-w-5xl mx-auto px-4 py-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
-              <div className="relative">
-                <i data-lucide="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Ieškoti maršruto, stotelės ar laiko (pvz. Dūkštas, 51, 07:00)..."
-                  className="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition text-sm"
-                />
-                {query && (
-                  <button
-                    onClick={() => setQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <i data-lucide="x" className="w-5 h-5"></i>
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <FilterSelect
-                  icon="calendar-days"
-                  label="Dienos"
-                  value={dayFilter}
-                  options={['Visos', ...dayTypes]}
-                  onChange={setDayFilter}
-                />
-                <FilterSelect
-                  icon="route"
-                  label="Maršrutas"
-                  value={routeFilter}
-                  options={['Visi', ...allRouteNumbers]}
-                  onChange={setRouteFilter}
-                />
-                <FilterSelect
-                  icon="map-pin"
-                  label="Stotelė"
-                  value={stopFilter}
-                  options={['Visos', ...allStops]}
-                  onChange={setStopFilter}
-                />
-              </div>
-
-              {hasActiveFilters && (
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs text-slate-500">
-                    Rasta: <span className="font-semibold text-slate-700">{filtered.length}</span> {filtered.length === 1 ? 'išvykimas' : 'išvykimų'}
-                  </span>
-                  <button
-                    onClick={resetFilters}
-                    className="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-                  >
-                    <i data-lucide="x" className="w-3.5 h-3.5"></i> Išvalyti filtrus
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 space-y-3">
-              {filtered.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                    <i data-lucide="search" className="w-6 h-6 text-slate-400"></i>
-                  </div>
-                  <p className="font-medium text-slate-700">Nieko nerasta</p>
-                  <p className="text-sm text-slate-500 mt-1">Pakeiskite paieškos žodį ar filtrus.</p>
-                </div>
-              ) : (
-                filtered.map((trip) => {
-                  const expanded = expandedId === trip.id;
-                  return (
-                    <article key={trip.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md">
-                      <button
-                        onClick={() => setExpandedId(expanded ? null : trip.id)}
-                        className="w-full text-left p-4 flex items-center gap-4"
-                      >
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-lg">
-                          {trip.routeNumber}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h2 className="font-semibold text-slate-900 truncate">{trip.routeName}</h2>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
-                            <span className="inline-flex items-center gap-1">
-                              <i data-lucide="clock" className="w-3.5 h-3.5"></i> {tripFirstTime(trip)}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <i data-lucide="map-pin" className="w-3.5 h-3.5"></i> {trip.stops.length} stot.
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <i data-lucide="calendar-days" className="w-3.5 h-3.5"></i> {trip.days}
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                              {trip.direction} → {trip.stops[trip.stops.length - 1]?.name}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 text-slate-400">
-                          <i data-lucide="chevron-down" className={`w-5 h-5 transition-transform ${expanded ? 'rotate-180' : ''}`}></i>
-                        </div>
-                      </button>
-
-                      {expanded && (
-                        <div className="border-t border-slate-100 bg-slate-50/50 px-4 py-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                              {trip.direction}
-                            </span>
-                          </div>
-                          <ol className="relative border-l-2 border-emerald-200 ml-2 space-y-3">
-                            {trip.stops.map((stop, i) => (
-                              <li key={i} className="pl-4 relative">
-                                <span className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-                                <div className="flex items-baseline justify-between gap-3">
-                                  <span className="text-sm font-medium text-slate-800">{stop.name}</span>
-                                  <span className="text-sm font-semibold text-emerald-700 tabular-nums">{stop.time}</span>
-                                </div>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      )}
-                    </article>
-                  );
-                })
-              )}
-            </div>
-
-            <footer className="mt-10 text-center text-xs text-slate-400">
-              <p>Ignalinos rajono autobusų grafikas. Duomenys pateikti informaciniais tikslais.</p>
-            </footer>
-          </main>
-        </div>
-      );
-    }
-
-    function FilterSelect({ icon, label, value, options, onChange }) {
-      return (
-        <label className="block">
-          <span className="sr-only">{label}</span>
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              <i data-lucide={icon} className="w-4 h-4"></i>
-            </div>
-            <select
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition appearance-none cursor-pointer"
-            >
-              {options.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt === 'Visos' || opt === 'Visi' ? `${label}: visos` : `${label}: ${opt}`}
-                </option>
-              ))}
-            </select>
-            <i data-lucide="chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
-          </div>
-        </label>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+        return {
+          query,
+          dayFilter,
+          routeFilter,
+          stopFilter,
+          expandedId,
+          dayTypes,
+          allRouteNumbers,
+          allStops,
+          filteredTrips,
+          hasActiveFilters,
+          resetFilters,
+          toggleTrip
+        };
+      }
+    }).mount('#app');
   </script>
 </body>
 </html>
