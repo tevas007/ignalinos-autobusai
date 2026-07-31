@@ -1,6 +1,6 @@
 {
   "name": "Ignalinos Autobusų Tvarkaraščiai",
-  "short_name": "Autobusai",
+  "short_name": "Ignalinos Autobusai",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
