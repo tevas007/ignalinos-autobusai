@@ -135,6 +135,20 @@
             color: #94a3b8;
         }
     </style>
+
+    <!-- Kintamasis maršrutams registruoti -->
+    <script>
+        window.allRoutes = [];
+        function registerRoute(routeData) {
+            window.allRoutes.push(routeData);
+        }
+    </script>
+
+    <!-- MARŠRUTŲ FAILAI (Čia tiesiog pridėsi naują eilutę kiekvienam maršrutui) -->
+    <script src="routes/m51.js"></script>
+    <script src="routes/m52.js"></script>
+    <script src="routes/m53.js"></script>
+    <script src="routes/m61.js"></script>
 </head>
 <body>
 
@@ -159,209 +173,19 @@
 </div>
 
 <script>
-const allRoutes = [
-  {
-    id: "M_Nr51",
-    name: "Maršrutas Nr. 51",
-    title: "Ignalina – Visaginas per Rimšę",
-    subtitle: "Ignalina – Visaginas per Rimšę",
-    distance: "65,1 km",
-    trip1_name: "Iš Ignalinos (06:35)",
-    trip2_name: "Iš Visagino (09:13)",
-    trip1_stops: [
-      { name: "Ignalina", time: "06:35", dist: "0 km" },
-      { name: "Baltys", time: "06:42", dist: "3,2 km" },
-      { name: "Vidiškės", time: "06:46", dist: "5,2 km" },
-      { name: "Maksimonys", time: "06:51", dist: "8,0 km" },
-      { name: "Girininkija", time: "06:56", dist: "11,0 km" },
-      { name: "N.Daugėliškis", time: "06:59", dist: "12,5 km" },
-      { name: "Kampelis", time: "07:02", dist: "15,1 km" },
-      { name: "Taujūnai", time: "07:05", dist: "16,2 km" },
-      { name: "Ožionių kryžkelė", time: "07:08", dist: "18,4 km" },
-      { name: "Janionys", time: "07:10", dist: "19,6 km" },
-      { name: "Padysnis", time: "07:13", dist: "21,7 km" },
-      { name: "Pamunė", time: "07:15", dist: "23,0 km" },
-      { name: "Mažėnai", time: "07:19", dist: "25,4 km" },
-      { name: "Gervelės", time: "07:22", dist: "27,5 km" },
-      { name: "Medeišiai", time: "07:26", dist: "29,7 km" },
-      { name: "Čižiūnai", time: "07:31", dist: "32,9 km" },
-      { name: "Verginiai", time: "07:34", dist: "34,6 km" },
-      { name: "Rimšė", time: "07:37", dist: "36,6 km" },
-      { name: "Kalninė", time: "07:40", dist: "37,7 km" },
-      { name: "Keižiai", time: "07:43", dist: "39,2 km" },
-      { name: "Bikėnai", time: "07:47", dist: "41,2 km" },
-      { name: "Kaniūkai", time: "07:49", dist: "42,7 km" },
-      { name: "Mokykla", time: "07:50", dist: "45,2 km" },
-      { name: "Dūkštas", time: "08:09", dist: "46,4 km" },
-      { name: "Vaškonys", time: "08:16", dist: "51,7 km" },
-      { name: "Beržininkai", time: "08:18", dist: "52,3 km" },
-      { name: "Bėgūnava", time: "08:21", dist: "53,8 km" },
-      { name: "Kalviškis", time: "08:22", dist: "54,8 km" },
-      { name: "Magūnai", time: "08:25", dist: "57,5 km" },
-      { name: "Statybos bazė", time: "08:29", dist: "58,8 km" },
-      { name: "Sankryža", time: "08:30", dist: "60,4 km" },
-      { name: "Sandėliai", time: "08:33", dist: "61,9 km" },
-      { name: "Visaginas I", time: "08:37", dist: "63,9 km" },
-      { name: "Visaginas II", time: "08:38", dist: "65,1 km" }
-    ],
-    trip2_stops: [
-      { name: "Visaginas II", time: "09:13", dist: "65,1 km" },
-      { name: "Visaginas I", time: "09:15", dist: "63,9 km" },
-      { name: "Sandėliai", time: "09:18", dist: "61,9 km" },
-      { name: "Sankryža", time: "09:21", dist: "60,4 km" },
-      { name: "Statybos bazė", time: "09:22", dist: "58,8 km" },
-      { name: "Magūnai", time: "09:26", dist: "57,5 km" },
-      { name: "Kalviškis", time: "09:29", dist: "54,8 km" },
-      { name: "Bėgūnava", time: "09:30", dist: "53,8 km" },
-      { name: "Beržininkai", time: "09:33", dist: "52,3 km" },
-      { name: "Vaškonys", time: "09:36", dist: "51,7 km" },
-      { name: "Dūkštas", time: "09:42", dist: "46,4 km" },
-      { name: "Mokykla", time: "09:46", dist: "45,2 km" },
-      { name: "Kaniūkai", time: "09:52", dist: "42,7 km" },
-      { name: "Bikėnai", time: "09:54", dist: "41,2 km" },
-      { name: "Keižiai", time: "09:98", dist: "39,2 km" },
-      { name: "Kalninė", time: "10:01", dist: "37,7 km" },
-      { name: "Rimšė", time: "10:04", dist: "36,6 km" },
-      { name: "Verginiai", time: "10:08", dist: "34,6 km" },
-      { name: "Čižiūnai", time: "10:11", dist: "32,9 km" },
-      { name: "Medeišiai", time: "10:17", dist: "29,7 km" },
-      { name: "Gervelės", time: "10:22", dist: "27,5 km" },
-      { name: "Mažėnai", time: "10:26", dist: "25,4 km" },
-      { name: "Pamunė", time: "10:31", dist: "23,0 km" },
-      { name: "Padysnis", time: "10:34", dist: "21,7 km" },
-      { name: "Janionys", time: "10:38", dist: "19,6 km" },
-      { name: "Ožionių kryžkelė", time: "10:40", dist: "18,4 km" },
-      { name: "Taujūnai", time: "10:44", dist: "16,2 km" },
-      { name: "Kampelis", time: "10:47", dist: "15,1 km" },
-      { name: "N.Daugėliškis", time: "10:52", dist: "12,5 km" },
-      { name: "Girininkija", time: "10:55", dist: "11,0 km" },
-      { name: "Maksimonys", time: "11:00", dist: "8,0 km" },
-      { name: "Vidiškės", time: "11:05", dist: "5,2 km" },
-      { name: "Baltys", time: "11:08", dist: "3,2 km" },
-      { name: "Ignalina", time: "11:13", dist: "0 km" }
-    ]
-  },
-  {
-    id: "M_Nr52",
-    name: "Maršrutas Nr. 52",
-    title: "Visaginas per Dūkštą",
-    subtitle: "Visaginas per Dūkštą (Mokslo metais / IV-adieniais)",
-    distance: "45,3 km / 56,1 km",
-    trip1_name: "Iš Ignalinos",
-    trip2_name: "Atgal į Ignaliną",
-    trip1_stops: [
-      { name: "Ignalina", time: "05:05 / 11:30", dist: "0 km" },
-      { name: "Kylatrakis", time: "05:08 / 11:40", dist: "5,0 km" },
-      { name: "Ažėnai", time: "05:10 / 11:43", dist: "6,8 km" },
-      { name: "Pašvoginė", time: "05:12 / 11:45", dist: "9,1 km" },
-      { name: "Kazitiškis", time: "05:15 / 11:50", dist: "12,3 km" },
-      { name: "Rupinsko kryžkelė", time: "05:18 / 11:54", dist: "14,7 km" },
-      { name: "Malvinavas", time: "05:20 / 11:57", dist: "16,0 km" },
-      { name: "Meilūnai", time: "05:24 / 12:02", dist: "-" },
-      { name: "Ligūnai", time: "05:28 / 12:07", dist: "18,5 km" },
-      { name: "Tumalinė", time: "05:32 / 12:11", dist: "23,4 km" },
-      { name: "Dūkštas", time: "05:37 / 12:15", dist: "26,6 km" },
-      { name: "Vaškonys", time: "05:42 / 12:20", dist: "30,9 km" },
-      { name: "Beržininkai", time: "05:45 / 12:23", dist: "32,5 km" },
-      { name: "Bėgūnai", time: "05:47 / 12:25", dist: "34,0 km" },
-      { name: "Kalviškis", time: "05:49 / 12:27", dist: "35,0 km" },
-      { name: "Magūnai", time: "05:53 / 12:31", dist: "37,7 km" },
-      { name: "Statybos bazė", time: "05:57 / 12:35", dist: "40,0 km" },
-      { name: "Sankryža", time: "05:59 / 12:37", dist: "41,6 km" },
-      { name: "Sandėlis", time: "06:02 / 12:40", dist: "42,1 km" },
-      { name: "Visaginas I", time: "06:06 / 12:44", dist: "44,2 km" },
-      { name: "Visaginas II", time: "06:07 / 12:45", dist: "45,3 km" }
-    ],
-    trip2_stops: [
-      { name: "Visaginas II", time: "06:10 / 14:00", dist: "45,3 km" },
-      { name: "Visaginas I", time: "06:11 / 14:02", dist: "44,2 km" },
-      { name: "Sandėlis", time: "06:13 / 14:04", dist: "42,1 km" },
-      { name: "Sankryža", time: "06:16 / 14:06", dist: "41,6 km" },
-      { name: "Statybos bazė", time: "06:18 / 14:08", dist: "40,0 km" },
-      { name: "Magūnai", time: "06:22 / 14:11", dist: "37,7 km" },
-      { name: "Kalviškis", time: "06:27 / 14:14", dist: "35,0 km" },
-      { name: "Bėgūnai", time: "06:31 / 14:16", dist: "34,0 km" },
-      { name: "Beržininkai", time: "06:33 / 14:18", dist: "32,5 km" },
-      { name: "Vaškonys", time: "06:35 / 14:20", dist: "30,9 km" },
-      { name: "Dūkštas", time: "07:04 / 14:22", dist: "29,5 km" },
-      { name: "Tumalinė", time: "07:08 / 14:27", dist: "32,7 km" },
-      { name: "Ligūnai", time: "07:12 / 14:30", dist: "34,7 km" },
-      { name: "Malvinavas", time: "07:19 / 14:36", dist: "40,1 km" },
-      { name: "Rupinsko kryžkelė", time: "07:23 / 14:38", dist: "41,4 km" },
-      { name: "Kazitiškis", time: "07:26 / 14:40", dist: "43,8 km" },
-      { name: "Pašvoginė", time: "07:31 / 14:42", dist: "47,0 km" },
-      { name: "Ažėnai", time: "07:34 / 14:45", dist: "49,3 km" },
-      { name: "Kylatrakis", time: "07:36 / 14:47", dist: "51,1 km" },
-      { name: "Ignalina", time: "07:45 / 14:50", dist: "56,1 km" }
-    ]
-  },
-  {
-    id: "M_Nr53",
-    name: "Maršrutas Nr. 53",
-    title: "Ignalina – N. Daugėliškis",
-    subtitle: "Ignalina – N. Daugėliškis (Mokslo metais, I–V)",
-    distance: "12,5 km",
-    trip1_name: "Iš Ignalinos (07:30)",
-    trip2_name: "Iš N. Daugėliškio (07:55)",
-    trip1_stops: [
-      { name: "Ignalina", time: "07:30", dist: "0 km" },
-      { name: "Baltys", time: "07:35", dist: "3,2 km" },
-      { name: "Vidiškės", time: "07:40", dist: "5,2 km" },
-      { name: "Maksimonys", time: "07:43", dist: "8,0 km" },
-      { name: "Girininkija", time: "07:45", dist: "11,0 km" },
-      { name: "N.Daugėliškis", time: "07:50", dist: "12,5 km" }
-    ],
-    trip2_stops: [
-      { name: "N.Daugėliškis", time: "07:55", dist: "0 km" },
-      { name: "Girininkija", time: "07:57", dist: "1,5 km" },
-      { name: "Maksimonys", time: "08:00", dist: "4,5 km" },
-      { name: "Vidiškės", time: "08:05", dist: "7,3 km" },
-      { name: "Baltys", time: "08:10", dist: "9,3 km" },
-      { name: "Ignalina", time: "08:15", dist: "12,5 km" }
-    ]
-  },
-  {
-    id: "M_Nr61",
-    name: "Maršrutas Nr. 61",
-    title: "Ignalina – Meironys",
-    subtitle: "Ignalina – Meironys (Trečiadieniais)",
-    distance: "8,3 km",
-    trip1_name: "Iš Ignalinos (08:10 / 12:00)",
-    trip2_name: "Iš Meironių (08:30 / 12:20)",
-    trip1_stops: [
-      { name: "Ignalina", time: "08:10 / 12:00", dist: "0 km" },
-      { name: "Ligoninė", time: "08:12 / 12:02", dist: "0,9 km" },
-      { name: "Akligatvis", time: "08:14 / 12:04", dist: "1,7 km" },
-      { name: "Strigailiškis", time: "08:16 / 12:06", dist: "2,6 km" },
-      { name: "Gaveikėnai", time: "08:21 / 12:11", dist: "4,7 km" },
-      { name: "Dringykštis", time: "08:24 / 12:14", dist: "5,9 km" },
-      { name: "Meironys I", time: "08:26 / 12:16", dist: "7,1 km" },
-      { name: "Meironys II", time: "08:28 / 12:18", dist: "8,3 km" }
-    ],
-    trip2_stops: [
-      { name: "Meironys II", time: "08:30 / 12:20", dist: "0 km" },
-      { name: "Meironys I", time: "08:33 / 12:23", dist: "1,2 km" },
-      { name: "Dringykštis", time: "08:35 / 12:25", dist: "2,4 km" },
-      { name: "Gaveikėnai", time: "08:38 / 12:28", dist: "3,6 km" },
-      { name: "Strigailiškis", time: "08:43 / 12:33", dist: "5,7 km" },
-      { name: "Akligatvis", time: "08:45 / 12:35", dist: "6,6 km" },
-      { name: "Ligoninė", time: "08:47 / 12:37", dist: "7,4 km" },
-      { name: "Ignalina", time: "08:50 / 12:40", dist: "8,3 km" }
-    ]
-  }
-];
-
 let currentRoute = null;
 let currentTripNum = 1;
 
 function init() {
     populateSelect();
-    selectRoute(0);
+    if (window.allRoutes.length > 0) {
+        selectRoute(0);
+    }
 }
 
 function populateSelect() {
     const select = document.getElementById('routeSelect');
-    select.innerHTML = allRoutes.map((r, i) => `<option value="${i}">${r.name}: ${r.title}</option>`).join('');
+    select.innerHTML = window.allRoutes.map((r, i) => `<option value="${i}">${r.name}: ${r.title}</option>`).join('');
 }
 
 function changeRoute() {
@@ -370,7 +194,7 @@ function changeRoute() {
 }
 
 function selectRoute(index) {
-    currentRoute = allRoutes[index];
+    currentRoute = window.allRoutes[index];
     document.getElementById('routeInfo').innerText = `${currentRoute.subtitle} (Rida: ${currentRoute.distance})`;
     
     document.getElementById('btn1').innerText = `1 Reisas (${currentRoute.trip1_name})`;
@@ -402,7 +226,8 @@ function filterStops() {
     `).join('');
 }
 
-init();
+// Paleidžiam kai viskas užkrauta
+window.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>
