@@ -53,13 +53,13 @@
         </button>
     </div>
 
-    <div class="tabs">
+    <div class="tabs" id="tripTabs">
         <button class="tab-btn active" id="btn1" onclick="switchTrip(1)">1 Reisas</button>
         <button class="tab-btn" id="btn2" onclick="switchTrip(2)">2 Reisas</button>
     </div>
 
     <div class="route-select-card">
-        <input type="text" id="search" placeholder="Ieškoti stotelės..." oninput="filterStops()">
+        <input type="text" id="search" placeholder="Ieškoti stotelės bet kuriame maršrute..." oninput="filterStops()">
     </div>
 
     <div class="stops-card" id="stopsList"></div>
@@ -75,7 +75,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     const installBtn = document.getElementById('installBtn');
-    installBtn.style.display = 'block'; // Parodome mygtuką tik tada, kai galima įdiegti
+    installBtn.style.display = 'block';
 
     installBtn.addEventListener('click', async () => {
         if (deferredPrompt) {
@@ -104,6 +104,8 @@ function populateSelect() {
 function changeRoute() {
     const idx = document.getElementById('routeSelect').value;
     selectRoute(idx);
+    // Kai pakeičiam maršrutą per išskleidžiamą meniu, išvalome paiešką, kad rodytų įprastą reisą
+    document.getElementById('search').value = '';
 }
 
 function selectRoute(index) {
@@ -120,23 +122,95 @@ function switchTrip(tripNum) {
     currentTripNum = tripNum;
     document.getElementById('btn1').classList.toggle('active', tripNum === 1);
     document.getElementById('btn2').classList.toggle('active', tripNum === 2);
+    // Jei vartotojas ieškojo laukelyje, perjungus reisą atnaujiname paiešką
     filterStops();
 }
 
 function filterStops() {
-    if (!currentRoute) return;
-    const query = document.getElementById('search').value.toLowerCase();
-    const stops = currentTripNum === 1 ? currentRoute.trip1_stops : currentRoute.trip2_stops;
-    const filtered = stops.filter(s => s.name.toLowerCase().includes(query));
-    
+    const query = document.getElementById('search').value.toLowerCase().trim();
     const list = document.getElementById('stopsList');
-    list.innerHTML = filtered.map(s => `
+    const tripTabs = document.getElementById('tripTabs');
+
+    // Jei paieškos laukelis tuščias – rodome įprastą pasirinkto maršruto reisą ir grąžiname mygtukus
+    if (!query) {
+        tripTabs.style.display = 'flex';
+        if (!currentRoute) return;
+        const stops = currentTripNum === 1 ? currentRoute.trip1_stops : currentRoute.trip2_stops;
+        renderStopsList(stops);
+        return;
+    }
+
+    // Jei kažkas įrašyta – ieškome per VISUS maršrutus ir abu reisus!
+    tripTabs.style.display = 'none'; // Paslėpiame 1/2 reiso tab'us paieškos metu, kad nesipainiotų
+    let allResults = [];
+
+    window.allRoutes.forEach((route, routeIndex) => {
+        // Tikrinam 1 reisą
+        if (route.trip1_stops) {
+            route.trip1_stops.forEach(s => {
+                if (s.name.toLowerCase().includes(query)) {
+                    allResults.push({
+                        ...s,
+                        routeName: `${route.name}: ${route.title}`,
+                        tripName: `1 Reisas (${route.trip1_name})`,
+                        routeIndex: routeIndex,
+                        tripNum: 1
+                    });
+                }
+            });
+        }
+        // Tikrinam 2 reisą
+        if (route.trip2_stops) {
+            route.trip2_stops.forEach(s => {
+                if (s.name.toLowerCase().includes(query)) {
+                    allResults.push({
+                        ...s,
+                        routeName: `${route.name}: ${route.title}`,
+                        tripName: `2 Reisas (${route.trip2_name})`,
+                        routeIndex: routeIndex,
+                        tripNum: 2
+                    });
+                }
+            });
+        }
+    });
+
+    if (allResults.length === 0) {
+        list.innerHTML = `<div style="padding: 20px; text-align: center; color: #666;">Nerasta stotelių pagal užklausą „${query}“</div>`;
+        return;
+    }
+
+    // Atvaizduojame rezultatus kartu su maršruto ir reiso pavadinimu
+    list.innerHTML = allResults.map(s => `
+        <div class="stop-item" style="cursor: pointer; flex-direction: column; align-items: flex-start; gap: 4px;" onclick="jumpToRouteAndStop(${s.routeIndex}, ${s.tripNum})">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">${s.routeName} — ${s.tripName}</div>
+            <div style="display: flex; width: 100%; justify-content: space-between;">
+                <span class="stop-time">${s.time}</span>
+                <span class="stop-name" style="font-weight: 600;">${s.name}</span>
+                <span class="stop-dist">${s.dist}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderStopsList(stops) {
+    const list = document.getElementById('stopsList');
+    list.innerHTML = stops.map(s => `
         <div class="stop-item">
             <span class="stop-time">${s.time}</span>
             <span class="stop-name">${s.name}</span>
             <span class="stop-dist">${s.dist}</span>
         </div>
     `).join('');
+}
+
+// Funkcija, kad paspaudus ant rastos stotelės iškart peršoktų į tą maršrutą
+function jumpToRouteAndStop(routeIndex, tripNum) {
+    document.getElementById('routeSelect').value = routeIndex;
+    selectRoute(routeIndex);
+    switchTrip(tripNum);
+    document.getElementById('search').value = '';
+    document.getElementById('tripTabs').style.display = 'flex';
 }
 
 window.addEventListener('DOMContentLoaded', loadAllRoutes);
