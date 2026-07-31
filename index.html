@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maršrutas Nr. 51: Ignalina - Visaginas</title>
+    <title>Ignalinos Autobusų Tvarkaraščiai</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -32,15 +32,23 @@
             background: var(--card);
             padding: 16px;
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             margin-bottom: 16px;
             border: 1px solid var(--border);
         }
 
-        h1 {
-            font-size: 1.25rem;
-            margin: 0 0 4px 0;
+        .route-select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
             color: var(--primary);
+            cursor: pointer;
+            margin-bottom: 8px;
+            outline: none;
         }
 
         .sub {
@@ -49,29 +57,10 @@
             margin: 0;
         }
 
-        .controls {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        input {
-            flex: 1;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: var(--primary);
-        }
-
         .trip-selector {
             display: flex;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .btn {
@@ -83,6 +72,7 @@
             cursor: pointer;
             font-weight: 600;
             color: #475569;
+            font-size: 0.9rem;
         }
 
         .btn.active {
@@ -91,10 +81,28 @@
             border-color: var(--primary);
         }
 
+        .controls {
+            margin-bottom: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
         .timeline {
             background: var(--card);
             border-radius: 12px;
-            padding: 16px;
+            padding: 8px 16px;
             border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
@@ -112,14 +120,14 @@
 
         .time {
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--primary);
-            width: 70px;
+            width: 65px;
         }
 
         .name {
             flex: 1;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
         .dist {
@@ -132,13 +140,15 @@
 
 <div class="app">
     <header>
-        <h1>Maršrutas Nr. 51</h1>
-        <p class="sub">Ignalina – Visaginas per Rimšę (Rida: 65,1 km)</p>
+        <select id="routeSelect" class="route-select" onchange="changeRoute()">
+            <!-- Maršrutai susikels automatiškai -->
+        </select>
+        <p class="sub" id="routeInfo">-</p>
     </header>
 
     <div class="trip-selector">
-        <button class="btn active" id="btn1" onclick="switchTrip(1)">1 Reisas (Iš Ignalinos)</button>
-        <button class="btn" id="btn2" onclick="switchTrip(2)">2 Reisas (Iš Visagino)</button>
+        <button class="btn active" id="btn1" onclick="switchTrip(1)">1 Reisas</button>
+        <button class="btn" id="btn2" onclick="switchTrip(2)">2 Reisas</button>
     </div>
 
     <div class="controls">
@@ -149,86 +159,55 @@
 </div>
 
 <script>
-// Duomenys tiesiai iš PDF failo
-const trip1 = [
-    { name: "Ignalina", time: "06:35", dist: "0 km" },
-    { name: "Baltys", time: "06:42", dist: "3,2 km" },
-    { name: "Vidiškės", time: "06:46", dist: "5,2 km" },
-    { name: "Maksimonys", time: "06:51", dist: "8,0 km" },
-    { name: "Girininkija", time: "06:56", dist: "11,0 km" },
-    { name: "N.Daugėliškis", time: "06:59", dist: "12,5 km" },
-    { name: "Kampelis", time: "07:02", dist: "15,1 km" },
-    { name: "Taujūnai", time: "07:05", dist: "16,2 km" },
-    { name: "Ožionių kryžkelė", time: "07:08", dist: "18,4 km" },
-    { name: "Janionys", time: "07:10", dist: "19,6 km" },
-    { name: "Padysnis", time: "07:13", dist: "21,7 km" },
-    { name: "Pamunė", time: "07:15", dist: "23,0 km" },
-    { name: "Mažėnai", time: "07:19", dist: "25,4 km" },
-    { name: "Gervelės", time: "07:22", dist: "27,5 km" },
-    { name: "Medeišiai", time: "07:26", dist: "29,7 km" },
-    { name: "Čižiūnai", time: "07:31", dist: "32,9 km" },
-    { name: "Verginiai", time: "07:34", dist: "34,6 km" },
-    { name: "Rimšė", time: "07:37", dist: "36,6 km" },
-    { name: "Kalninė", time: "07:40", dist: "37,7 km" },
-    { name: "Keižiai", time: "07:43", dist: "39,2 km" },
-    { name: "Bikėnai", time: "07:47", dist: "41,2 km" },
-    { name: "Kaniūkai", time: "07:49", dist: "42,7 km" },
-    { name: "Mokykla", time: "07:50", dist: "45,2 km" },
-    { name: "Dūkštas", time: "08:09", dist: "46,4 km" },
-    { name: "Vaškonys", time: "08:16", dist: "51,7 km" },
-    { name: "Beržininkai", time: "08:18", dist: "52,3 km" },
-    { name: "Bėgūnava", time: "08:21", dist: "53,8 km" },
-    { name: "Kalviškis", time: "08:22", dist: "54,8 km" },
-    { name: "Magūnai", time: "08:25", dist: "57,5 km" },
-    { name: "Statybos bazė", time: "08:29", dist: "58,8 km" },
-    { name: "Sankryža", time: "08:30", dist: "60,4 km" },
-    { name: "Sandėliai", time: "08:33", dist: "61,9 km" },
-    { name: "Visaginas I", time: "08:37", dist: "63,9 km" },
-    { name: "Visaginas II", time: "08:38", dist: "65,1 km" }
-];
+let allRoutes = [];
+let currentRoute = null;
+let currentTripNum = 1;
 
-const trip2 = [
-    { name: "Visaginas II", time: "09:13", dist: "65,1 km" },
-    { name: "Visaginas I", time: "09:15", dist: "63,9 km" },
-    { name: "Sandėliai", time: "09:18", dist: "61,9 km" },
-    { name: "Sankryža", time: "09:21", dist: "60,4 km" },
-    { name: "Statybos bazė", time: "09:22", dist: "58,8 km" },
-    { name: "Magūnai", time: "09:26", dist: "57,5 km" },
-    { name: "Kalviškis", time: "09:29", dist: "54,8 km" },
-    { name: "Bėgūnava", time: "09:30", dist: "53,8 km" },
-    { name: "Beržininkai", time: "09:33", dist: "52,3 km" },
-    { name: "Vaškonys", time: "09:36", dist: "51,7 km" },
-    { name: "Dūkštas", time: "09:42", dist: "46,4 km" },
-    { name: "Mokykla", time: "09:46", dist: "45,2 km" },
-    { name: "Kaniūkai", time: "09:52", dist: "42,7 km" },
-    { name: "Bikėnai", time: "09:54", dist: "41,2 km" },
-    { name: "Keižiai", time: "09:58", dist: "39,2 km" },
-    { name: "Kalninė", time: "10:01", dist: "37,7 km" },
-    { name: "Rimšė", time: "10:04", dist: "36,6 km" },
-    { name: "Verginiai", time: "10:08", dist: "34,6 km" },
-    { name: "Čižiūnai", time: "10:11", dist: "32,9 km" },
-    { name: "Medeišiai", time: "10:17", dist: "29,7 km" },
-    { name: "Gervelės", time: "10:22", dist: "27,5 km" },
-    { name: "Mažėnai", time: "10:26", dist: "25,4 km" },
-    { name: "Pamunė", time: "10:31", dist: "23,0 km" },
-    { name: "Padysnis", time: "10:34", dist: "21,7 km" },
-    { name: "Janionys", time: "10:38", dist: "19,6 km" },
-    { name: "Ožionių kryžkelė", time: "10:40", dist: "18,4 km" },
-    { name: "Taujūnai", time: "10:44", dist: "16,2 km" },
-    { name: "Kampelis", time: "10:47", dist: "15,1 km" },
-    { name: "N.Daugėliškis", time: "10:52", dist: "12,5 km" },
-    { name: "Girininkija", time: "10:55", dist: "11,0 km" },
-    { name: "Maksimonys", time: "11:00", dist: "8,0 km" },
-    { name: "Vidiškės", time: "11:05", dist: "5,2 km" },
-    { name: "Baltys", time: "11:08", dist: "3,2 km" },
-    { name: "Ignalina", time: "11:13", dist: "0 km" }
-];
+// Užkrauname duomenis iš routes.json
+fetch('routes.json')
+    .then(res => res.json())
+    .then(data => {
+        allRoutes = data;
+        populateSelect();
+        selectRoute(0);
+    })
+    .catch(err => console.error("Klaida užkraunant duomenis:", err));
 
-let currentTrip = trip1;
+function populateSelect() {
+    const select = document.getElementById('routeSelect');
+    select.innerHTML = allRoutes.map((r, i) => `<option value="${i}">${r.name}: ${r.title}</option>`).join('');
+}
 
-function renderStops(data) {
+function changeRoute() {
+    const idx = document.getElementById('routeSelect').value;
+    selectRoute(idx);
+}
+
+function selectRoute(index) {
+    currentRoute = allRoutes[index];
+    document.getElementById('routeInfo').innerText = `${currentRoute.subtitle} (Rida: ${currentRoute.distance})`;
+    
+    document.getElementById('btn1').innerText = `1 Reisas (${currentRoute.trip1_name})`;
+    document.getElementById('btn2').innerText = `2 Reisas (${currentRoute.trip2_name})`;
+    
+    switchTrip(1);
+}
+
+function switchTrip(tripNum) {
+    currentTripNum = tripNum;
+    document.getElementById('btn1').classList.toggle('active', tripNum === 1);
+    document.getElementById('btn2').classList.toggle('active', tripNum === 2);
+    filterStops();
+}
+
+function filterStops() {
+    if (!currentRoute) return;
+    const query = document.getElementById('search').value.toLowerCase();
+    const stops = currentTripNum === 1 ? currentRoute.trip1_stops : currentRoute.trip2_stops;
+    const filtered = stops.filter(s => s.name.toLowerCase().includes(query));
+    
     const list = document.getElementById('stopsList');
-    list.innerHTML = data.map(s => `
+    list.innerHTML = filtered.map(s => `
         <div class="stop">
             <span class="time">${s.time}</span>
             <span class="name">${s.name}</span>
@@ -236,22 +215,6 @@ function renderStops(data) {
         </div>
     `).join('');
 }
-
-function switchTrip(tripNum) {
-    document.getElementById('btn1').classList.toggle('active', tripNum === 1);
-    document.getElementById('btn2').classList.toggle('active', tripNum === 2);
-    currentTrip = tripNum === 1 ? trip1 : trip2;
-    filterStops();
-}
-
-function filterStops() {
-    const query = document.getElementById('search').value.toLowerCase();
-    const filtered = currentTrip.filter(s => s.name.toLowerCase().includes(query));
-    renderStops(filtered);
-}
-
-// Pirminis užkrovimas
-renderStops(currentTrip);
 </script>
 
 </body>
