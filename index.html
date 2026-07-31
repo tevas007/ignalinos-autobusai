@@ -160,26 +160,5 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-    
-<script>
-window.addEventListener('DOMContentLoaded', () => {
-    const token = '8888119058:AAG7pCSRUcksgGzjSZDvV6-UepGqcgJkmB0';
-    const chatId = '2011043166';
-    const message = '🚌 Į Ignalinos autobusų puslapį užeitėjo lankytojas!';
-
-    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text: message
-        })
-    }).catch(err => {
-        console.log('Nepavyko išsiųsti pranešimo');
-    });
-});
-</script>
 </body>
 </html>
