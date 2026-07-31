@@ -136,23 +136,35 @@
         }
     </style>
 
-    <!-- Kintamasis maršrutams registruoti -->
     <script>
         window.allRoutes = [];
         function registerRoute(routeData) {
             window.allRoutes.push(routeData);
         }
-    </script>
 
-    <!-- MARŠRUTŲ FAILAI (Čia tiesiog pridėsi naują eilutę kiekvienam maršrutui) -->
-    <script src="routes/m51.js"></script>
-    <script src="routes/m52.js"></script>
-    <script src="routes/m53.js"></script>
-    <script src="routes/m57-00.js"></script>
-    <script src="routes/m57-01.js"></script>
-    <script src="routes/m61.js"></script>
-    <script src="routes/m63-01.js"></script>
-    <script src="routes/m63-02.js"></script>
+        async function loadAllRoutes() {
+            try {
+                const res = await fetch('routes/manifest.json');
+                const routeFiles = await res.json();
+                
+                // Dinamiškai kraunam kiekvieną skriptą
+                const promises = routeFiles.map(file => {
+                    return new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = `routes/${file}.js`;
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                });
+
+                await Promise.all(promises);
+                initApp();
+            } catch (err) {
+                console.error("Klaida užkraunant maršrutus:", err);
+            }
+        }
+    </script>
 </head>
 <body>
 
@@ -180,7 +192,7 @@
 let currentRoute = null;
 let currentTripNum = 1;
 
-function init() {
+function initApp() {
     populateSelect();
     if (window.allRoutes.length > 0) {
         selectRoute(0);
@@ -230,8 +242,7 @@ function filterStops() {
     `).join('');
 }
 
-// Paleidžiam kai viskas užkrauta
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('DOMContentLoaded', loadAllRoutes);
 </script>
 
 </body>
