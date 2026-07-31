@@ -1,0 +1,30 @@
+registerRoute({
+  id: "m73-01",
+  name: "Maršrutas Nr. 73-1",
+  title: "Bernotai – Rubelninkai – Ignalina",
+  subtitle: "Reisų vykdymo dienos: I, III, V (mokslo metais)",
+  distance: "68.9 km",
+  trip1_name: "6:00 iš Ignalinos",
+  trip2_name: "Atgalinis reisas nenumatytas",
+  trip1_stops: [
+    { time: "06:00", name: "Ignalina", dist: "0 km" },
+    { time: "06:35", name: "Krikonys", dist: "23.0 km" },
+    { time: "06:45", name: "Mielagėnai", dist: "26.2 km" },
+    { time: "06:55", name: "Bernotai", dist: "31.7 km" },
+    { time: "07:00", name: "Apšiūtos", dist: "32.9 km" },
+    { time: "07:20", name: "Rubelninkai", dist: "43.7 km" },
+    { time: "07:22", name: "Pustoška", dist: "45.3 km" },
+    { time: "07:24", name: "Balciulioniškė", dist: "46.8 km" },
+    { time: "07:27", name: "Mikalavas II", dist: "49.4 km" },
+    { time: "07:28", name: "Paringys", dist: "50.6 km" },
+    { time: "07:32", name: "Grigiškė", dist: "52.4 km" },
+    { time: "07:34", name: "Mikalavas I", dist: "53.5 km" },
+    { time: "07:40", name: "N.Daugėliškis", dist: "56.4 km" },
+    { time: "07:42", name: "Girininkija", dist: "57.9 km" },
+    { time: "07:46", name: "Maksimonys", dist: "60.9 km" },
+    { time: "07:50", name: "Vidiškės", dist: "63.7 km" },
+    { time: "07:53", name: "Baltys", dist: "65.7 km" },
+    { time: "08:00", name: "Ignalina", dist: "68.9 km" }
+  ],
+  trip2_stops: []
+});
