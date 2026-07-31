@@ -142,28 +142,30 @@
             window.allRoutes.push(routeData);
         }
 
+        // Užkrauname maršrutus nuosekliai iš eilės
         async function loadAllRoutes() {
             if (!window.routeManifest || !Array.isArray(window.routeManifest)) {
                 console.error("Manifestas nerastas");
                 return;
             }
 
-            const promises = window.routeManifest.map(file => {
-                return new Promise((resolve, reject) => {
+            for (const file of window.routeManifest) {
+                await new Promise((resolve, reject) => {
                     const script = document.createElement('script');
                     script.src = `./routes/${file}.js`;
                     script.onload = resolve;
                     script.onerror = reject;
                     document.head.appendChild(script);
                 });
-            });
+            }
 
-            await Promise.all(promises);
+            // Papildomai išrūšiuojam pagal pavadinimą / numerį (pvz. Nr. 51, Nr. 52, Nr. 63.01)
+            window.allRoutes.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+
             initApp();
         }
     </script>
 
-    <!-- Kraunam manifestą kaip standartinį JS failą -->
     <script src="./routes/manifest.js"></script>
 </head>
 <body>
