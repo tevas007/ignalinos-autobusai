@@ -14,7 +14,6 @@
             window.allRoutes.push(routeData);
         }
 
-        // Užkrauname maršrutus nuosekliai iš eilės
         async function loadAllRoutes() {
             if (!window.routeManifest || !Array.isArray(window.routeManifest)) {
                 console.error("Manifestas nerastas");
@@ -31,9 +30,7 @@
                 });
             }
 
-            // Papildomai išrūšiuojam pagal pavadinimą / numerį
             window.allRoutes.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-
             initApp();
         }
     </script>
@@ -43,10 +40,16 @@
 <body>
 
 <div class="container">
-    <div class="route-select-card">
-        <select id="routeSelect" onchange="changeRoute()">
-        </select>
-        <div class="route-info" id="routeInfo">-</div>
+    <!-- Viršutinė kortelė su maršrutu ir paslėptu/rodomu diegimo mygtuku -->
+    <div class="route-select-card" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+            <select id="routeSelect" onchange="changeRoute()"></select>
+            <div class="route-info" id="routeInfo">-</div>
+        </div>
+        <!-- Diegimo mygtukas (iš pradžių paslėptas, kol naršyklė leis įdiegti) -->
+        <button id="installBtn" style="display: none; background: var(--primary); color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; white-space: nowrap;">
+            Įsidiegti
+        </button>
     </div>
 
     <div class="tabs">
@@ -64,6 +67,26 @@
 <script>
 let currentRoute = null;
 let currentTripNum = 1;
+let deferredPrompt = null;
+
+// PWA diegimo logika
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('installBtn');
+    installBtn.style.display = 'block'; // Parodome mygtuką tik tada, kai galima įdiegti
+
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        }
+    });
+});
 
 function initApp() {
     populateSelect();
@@ -109,7 +132,6 @@ function filterStops() {
     list.innerHTML = filtered.map(s => `
         <div class="stop-item">
             <span class="stop-time">${s.time}</span>
-            <div class="stop-dot"></div>
             <span class="stop-name">${s.name}</span>
             <span class="stop-dist">${s.dist}</span>
         </div>
