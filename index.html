@@ -4,137 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ignalinos Autobusų Tvarkaraščiai</title>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #0f172a;
-            --border: #e2e8f0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 16px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .app {
-            width: 100%;
-            max-width: 600px;
-        }
-
-        header {
-            background: var(--card);
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-        }
-
-        .route-select {
-            width: 100%;
-            padding: 10px;
-            font-size: 1.05rem;
-            font-weight: bold;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: #fff;
-            color: var(--primary);
-            cursor: pointer;
-            margin-bottom: 8px;
-            outline: none;
-        }
-
-        .sub {
-            font-size: 0.875rem;
-            color: #64748b;
-            margin: 0;
-        }
-
-        .trip-selector {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--border);
-            background: var(--card);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            color: #475569;
-            font-size: 0.85rem;
-        }
-
-        .btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .controls {
-            margin-bottom: 16px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-            box-sizing: border-box;
-        }
-
-        input:focus {
-            border-color: var(--primary);
-        }
-
-        .timeline {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 8px 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .stop {
-            display: flex;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .stop:last-child {
-            border-bottom: none;
-        }
-
-        .time {
-            font-weight: bold;
-            font-size: 0.95rem;
-            color: var(--primary);
-            width: 110px;
-        }
-
-        .name {
-            flex: 1;
-            font-size: 0.95rem;
-        }
-
-        .dist {
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 
     <script>
         window.allRoutes = [];
@@ -159,7 +29,7 @@
                 });
             }
 
-            // Papildomai išrūšiuojam pagal pavadinimą / numerį (pvz. Nr. 51, Nr. 52, Nr. 63.01)
+            // Papildomai išrūšiuojam pagal pavadinimą / numerį
             window.allRoutes.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
             initApp();
@@ -170,23 +40,23 @@
 </head>
 <body>
 
-<div class="app">
-    <header>
-        <select id="routeSelect" class="route-select" onchange="changeRoute()">
+<div class="container">
+    <div class="route-select-card">
+        <select id="routeSelect" onchange="changeRoute()">
         </select>
-        <p class="sub" id="routeInfo">-</p>
-    </header>
-
-    <div class="trip-selector">
-        <button class="btn active" id="btn1" onclick="switchTrip(1)">1 Reisas</button>
-        <button class="btn" id="btn2" onclick="switchTrip(2)">2 Reisas</button>
+        <div class="route-info" id="routeInfo">-</div>
     </div>
 
-    <div class="controls">
+    <div class="tabs">
+        <button class="tab-btn active" id="btn1" onclick="switchTrip(1)">1 Reisas</button>
+        <button class="tab-btn" id="btn2" onclick="switchTrip(2)">2 Reisas</button>
+    </div>
+
+    <div class="route-select-card">
         <input type="text" id="search" placeholder="Ieškoti stotelės..." oninput="filterStops()">
     </div>
 
-    <div class="timeline" id="stopsList"></div>
+    <div class="stops-card" id="stopsList"></div>
 </div>
 
 <script>
@@ -235,10 +105,11 @@ function filterStops() {
     
     const list = document.getElementById('stopsList');
     list.innerHTML = filtered.map(s => `
-        <div class="stop">
-            <span class="time">${s.time}</span>
-            <span class="name">${s.name}</span>
-            <span class="dist">${s.dist}</span>
+        <div class="stop-item">
+            <span class="stop-time">${s.time}</span>
+            <div class="stop-dot"></div>
+            <span class="stop-name">${s.name}</span>
+            <span class="stop-dist">${s.dist}</span>
         </div>
     `).join('');
 }
