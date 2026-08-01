@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="lt">
 <head>
+    <base href="/autobusai/">
     <script defer src="/_vercel/insights/script.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,13 +42,16 @@
 <body>
 
 <div class="container">
-    <!-- Antraštė su herbu ir pavadinimu -->
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding: 0 4px;">
-        <img src="herbas.svg" alt="Ignalinos herbas" style="width: 40px; height: 48px; object-fit: contain;" onerror="this.style.display='none'">
-        <div>
-            <h1 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main, #1e293b); margin: 0;">Ignalinos Autobusai</h1>
-            <div style="font-size: 0.8rem; color: var(--text-secondary, #64748b);">Oficialūs vietiniai maršrutai</div>
+    <!-- Antraštė su herbu, pavadinimu ir nuoroda atgal -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding: 0 4px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="herbas.svg" alt="Ignalinos herbas" style="width: 40px; height: 48px; object-fit: contain;" onerror="this.style.display='none'">
+            <div>
+                <h1 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main, #1e293b); margin: 0;">Ignalinos Autobusai</h1>
+                <div style="font-size: 0.8rem; color: var(--text-secondary, #64748b);">Oficialūs vietiniai maršrutai</div>
+            </div>
         </div>
+        <a href="/" style="font-size: 0.85rem; font-weight: 600; color: #2563eb; text-decoration: none;">← Ignalinos Paslaugos</a>
     </div>
 
     <!-- Viršutinė kortelė su maršrutu ir paslėptu/rodomu diegimo mygtuku -->
@@ -56,7 +60,7 @@
             <select id="routeSelect" onchange="changeRoute()"></select>
             <div class="route-info" id="routeInfo">-</div>
         </div>
-        <!-- Diegimo mygtukas (iš pradžių paslėptas, kol naršyklė leis įdiegti) -->
+        <!-- Diegimo mygtukas -->
         <button id="installBtn" style="display: none; background: var(--primary); color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; white-space: nowrap;">
             Įsidiegti
         </button>
